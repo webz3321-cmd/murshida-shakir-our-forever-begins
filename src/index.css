@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ivory text-brown font-sans antialiased;
+  overflow-x: hidden;
+}
+
+/* Serif / script fallbacks are in tailwind.config.js so text still
+   renders beautifully if Google Fonts stall. */
+.font-script {
+  font-family: 'Great Vibes', 'Cormorant Garamond', cursive;
+}
+
+.gold-divider {
+  @apply flex items-center justify-center gap-3 text-gold;
+}
+.gold-divider::before,
+.gold-divider::after {
+  content: '';
+  height: 1px;
+  width: 4rem;
+  background: linear-gradient(to right, transparent, #d6b56d);
+}
+.gold-divider::after {
+  background: linear-gradient(to left, transparent, #d6b56d);
+}
+
+/* 3D envelope flap */
+.envelope-scene {
+  perspective: 1200px;
+}
+.envelope-flap {
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  backface-visibility: hidden;
+}
+.envelope-open .envelope-flap {
+  transform: rotateX(180deg);
+}
+.envelope-card {
+  transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.35s, opacity 0.6s ease 0.35s;
+}
+.envelope-open .envelope-card {
+  transform: translateY(-58%);
+}
+
+/* Floating petals / particles */
+@keyframes floaty {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+  50% { transform: translateY(-18px) rotate(12deg); opacity: 1; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+}
+.animate-floaty {
+  animation: floaty 6s ease-in-out infinite;
+}
+
+@keyframes eq {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+.eq-bar {
+  transform-origin: bottom;
+  animation: eq 0.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-floaty, .eq-bar { animation: none; }
+  .envelope-flap, .envelope-card { transition-duration: 0.01ms; }
+}
