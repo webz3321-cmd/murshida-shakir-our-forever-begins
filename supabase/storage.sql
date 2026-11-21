@@ -7,7 +7,8 @@
 
 insert into storage.buckets (id, name, public)
 values ('gallery', 'gallery', true),
-       ('audio', 'audio', true)
+       ('audio', 'audio', true),
+       ('videos', 'videos', true)
 on conflict (id) do nothing;
 
 -- Public read
@@ -15,6 +16,8 @@ create policy "public read gallery files" on storage.objects
   for select using (bucket_id = 'gallery');
 create policy "public read audio files" on storage.objects
   for select using (bucket_id = 'audio');
+create policy "public read video files" on storage.objects
+  for select using (bucket_id = 'videos');
 
 -- Admin-only upload / update / delete.
 -- (Uses the same public.is_admin() helper from migration 001.)
@@ -32,6 +35,16 @@ create policy "admin update audio" on storage.objects
 create policy "admin delete audio" on storage.objects
   for delete using (bucket_id = 'audio' and public.is_admin());
 
+-- Admin-only upload / update / delete for videos (incl. poster images).
+create policy "admin upload videos" on storage.objects
+  for insert with check (bucket_id = 'videos' and public.is_admin());
+create policy "admin update videos" on storage.objects
+  for update using (bucket_id = 'videos' and public.is_admin());
+create policy "admin delete videos" on storage.objects
+  for delete using (bucket_id = 'videos' and public.is_admin());
+
 -- Recommended upload limits (enforce in the Admin upload UI):
 --   images: jpg / png / webp only, max 5 MB, compress before upload
 --   audio:  mp3 / wav only,   max 15 MB
+--   videos: mp4 / webm only,  max 25 MB — compress larger videos to
+--           720p first (e.g. HandBrake) rather than failing silently

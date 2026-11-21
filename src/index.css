@@ -74,8 +74,55 @@ body {
   animation: eq 0.9s ease-in-out infinite;
 }
 
+/* Blinking pointing finger above OPEN INVITATION */
+@keyframes finger-blink {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  50% { opacity: 0.25; transform: translateY(6px); }
+}
+.finger-blink {
+  animation: finger-blink 1.4s ease-in-out infinite;
+}
+
+/* Scroll-triggered reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Qubba ring animations */
+@keyframes qubba-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes qubba-spin-rev {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+.qubba-spin-slow {
+  animation: qubba-spin 60s linear infinite;
+}
+.qubba-spin-reverse {
+  animation: qubba-spin-rev 45s linear infinite;
+}
+.qubba-orbit {
+  animation: qubba-spin 12s linear infinite;
+}
+.qubba-intro {
+  animation: qubba-bloom 1.1s ease-out;
+}
+@keyframes qubba-bloom {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .animate-floaty, .eq-bar { animation: none; }
+  .animate-floaty, .eq-bar, .finger-blink, .qubba-spin-slow, .qubba-spin-reverse, .qubba-orbit, .qubba-intro { animation: none; }
   .envelope-flap, .envelope-card { transition-duration: 0.01ms; }
+  .reveal { opacity: 1; transform: none; transition: none; }
 }

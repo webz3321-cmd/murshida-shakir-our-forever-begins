@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Volume2, VolumeX, Sparkles } from 'lucide-react'
 import { WEDDING } from '../lib/config'
 import { recordAnalyticsEvent } from '../lib/supabase'
+import QubbaRing from './QubbaRing'
 
 export function playChime() {
   try {
@@ -36,13 +37,45 @@ export default function Envelope({
   onOpened: () => void
 }) {
   const [opening, setOpening] = useState(false)
+  const [showQubba, setShowQubba] = useState(false)
+  const timers = useRef<number[]>([])
 
   const open = () => {
     if (opening) return
     setOpening(true)
     if (soundOn) playChime()
     void recordAnalyticsEvent('invitation_open')
-    window.setTimeout(onOpened, 1400)
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced) {
+      timers.current.push(window.setTimeout(onOpened, 1400))
+      return
+    }
+    // Envelope flap opens, then the Qubba ring blooms full-screen,
+    // then the main site is revealed.
+    timers.current.push(window.setTimeout(() => setShowQubba(true), 1400))
+    timers.current.push(window.setTimeout(onOpened, 4200))
+  }
+
+  if (showQubba) {
+    return (
+      <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-ivory px-5 py-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.1, ease: 'easeOut' }}
+        >
+          <QubbaRing variant="intro" />
+        </motion.div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.8 }}
+          className="mt-6 font-serif text-lg italic text-brown-light"
+        >
+          {WEDDING.heading}
+        </motion.p>
+      </div>
+    )
   }
 
   return (
@@ -73,7 +106,11 @@ export default function Envelope({
         transition={{ duration: 0.8 }}
         className="relative z-10 w-full max-w-md"
       >
-        <p className="text-xs font-medium tracking-[0.35em] text-gold-dark">YOU&rsquo;RE INVITED</p>
+        {/* Huge invitation heading */}
+        <h1 className="font-serif font-semibold leading-[0.95] tracking-wide text-brown">
+          <span className="block text-6xl sm:text-7xl">YOU ARE</span>
+          <span className="block text-7xl text-gold-dark sm:text-8xl">INVITED</span>
+        </h1>
         <div className="gold-divider my-4"><Sparkles size={16} /></div>
 
         <div className={`envelope-scene relative mx-auto mt-2 h-72 w-full max-w-sm ${opening ? 'envelope-open' : ''}`}>
@@ -94,10 +131,12 @@ export default function Envelope({
           <div className="envelope-flap absolute inset-x-0 top-0 z-30 h-36 origin-top rounded-t-xl border border-gold/60 bg-[#EFDDBB] [clip-path:polygon(0_0,100%_0,50%_100%)]" />
         </div>
 
+        {/* Blinking pointing finger above the button */}
+        <div aria-hidden className="finger-blink mt-7 text-4xl text-gold-dark">👇</div>
         <button
           onClick={open}
           disabled={opening}
-          className="mt-8 rounded-full bg-brown px-8 py-3.5 text-sm font-medium tracking-[0.2em] text-ivory shadow-lg transition hover:bg-gold-dark focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:opacity-70"
+          className="mt-2 rounded-full bg-brown px-8 py-3.5 text-sm font-medium tracking-[0.2em] text-ivory shadow-lg transition hover:bg-gold-dark focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:opacity-70"
         >
           {opening ? 'OPENING…' : 'OPEN INVITATION ✨'}
         </button>

@@ -1,14 +1,36 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { WEDDING } from '../lib/config'
+import QubbaRing from './QubbaRing'
 
-export default function Hero() {
+export default function Hero({ animationsEnabled = true }: { animationsEnabled?: boolean }) {
+  // Gentle scroll parallax: the ring drifts up and fades as you scroll away.
+  const [scrollY, setScrollY] = useState(0)
+  useEffect(() => {
+    if (!animationsEnabled) return
+    const onScroll = () => setScrollY(window.scrollY)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [animationsEnabled])
+
+  const ringOpacity = Math.max(0, 0.5 - scrollY / 1200)
+  const ringShift = animationsEnabled ? Math.min(scrollY * 0.25, 120) : 0
+
   return (
     <header className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-ivory px-5 text-center">
       <div aria-hidden className="pointer-events-none absolute inset-0">
         {['🌸', '✦', '🌿', '✦'].map((p, i) => (
           <span key={i} className="animate-floaty absolute text-2xl opacity-50" style={{ left: `${15 + i * 22}%`, top: `${18 + (i % 2) * 55}%`, animationDelay: `${i}s` }}>{p}</span>
         ))}
+      </div>
+      {/* Qubba ring resting behind the names */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        style={{ opacity: ringOpacity, transform: `translate(-50%, calc(-50% + ${ringShift}px))` }}
+      >
+        <QubbaRing variant="hero" showNames={false} />
       </div>
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }} className="relative z-10">
         <p className="font-script text-4xl text-gold-dark sm:text-5xl">Our Forever Begins</p>

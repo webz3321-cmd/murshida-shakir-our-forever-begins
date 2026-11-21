@@ -21,7 +21,7 @@ export const WEDDING = {
   mapsSearchUrl:
     'https://www.google.com/maps/search/?api=1&query=' +
     encodeURIComponent('Janapriya Garden Hall, Mani'),
-} as const
+}
 
 export type AttendanceStatus = 'attending' | 'not_attending'
 
@@ -44,55 +44,73 @@ export interface WeddingEvent {
   event_order: number
 }
 
-export interface GalleryImage {
+export interface WeddingVideo {
   id: string
-  image_url: string
+  title: string
+  description: string | null
+  video_url: string
   storage_path: string | null
-  image_order: number
-  is_hero: boolean
-  is_placeholder?: boolean
+  poster_url: string | null
+  poster_path: string | null
+  is_featured: boolean
+  is_published: boolean
+  video_order: number
+  file_size: number | null
+  created_at: string
+  updated_at?: string
 }
 
 export interface AudioTrack {
   id: string
   title: string
   file_url: string
+  storage_path: string | null
   audio_type: 'background' | 'opening' | 'envelope' | 'button' | 'notification'
   file_size: number | null
   created_at: string
 }
 
+export interface ThemeSettings {
+  backgroundColor: string
+  goldAccent: string
+  headingFont: 'serif' | 'script'
+  animationsEnabled: boolean
+}
+
+export const DEFAULT_THEME: ThemeSettings = {
+  backgroundColor: '#FFF9F0',
+  goldAccent: '#D6B56D',
+  headingFont: 'serif',
+  animationsEnabled: true,
+}
+
 export interface SiteSettings {
   published: boolean
-  gallery_visible: boolean
+  videos_visible: boolean
   countdown_visible: boolean
   rsvp_visible: boolean
   music_enabled: boolean
   music_loop: boolean
   music_volume: number
+  animations_enabled: boolean
+  theme: ThemeSettings
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   published: true,
-  gallery_visible: true,
+  videos_visible: true,
   countdown_visible: true,
   rsvp_visible: true,
   music_enabled: true,
   music_loop: true,
   music_volume: 0.6,
+  animations_enabled: true,
+  theme: DEFAULT_THEME,
 }
 
-// Placeholder gallery art. These are floral SVG-style panels, clearly
-// labelled as placeholders in the UI. They are NOT wedding photographs
-// and must never be presented as such.
-export const PLACEHOLDER_GALLERY: GalleryImage[] = Array.from(
-  { length: 6 },
-  (_, i) => ({
-    id: `placeholder-${i + 1}`,
-    image_url: '',
-    storage_path: null,
-    image_order: i,
-    is_hero: i === 0,
-    is_placeholder: true,
-  }),
-)
+// Video upload limits (also enforced in the Admin Video Manager UI).
+export const VIDEO_MAX_BYTES = 25 * 1024 * 1024 // 25 MB
+export const VIDEO_TYPES = ['video/mp4', 'video/webm'] as const
+export const AUDIO_MAX_BYTES = 15 * 1024 * 1024 // 15 MB
+export const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/x-wav'] as const
+export const POSTER_MAX_BYTES = 5 * 1024 * 1024 // 5 MB

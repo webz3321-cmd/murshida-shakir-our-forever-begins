@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { WeddingVideo } from './config'
 
 // Only the anon key is ever used in the browser. Never add a
 // service-role key here — admin writes go through Supabase Auth + RLS.
@@ -36,4 +37,15 @@ export async function recordAnalyticsEvent(eventType: 'visit' | 'invitation_open
   } catch {
     // Analytics must never block rendering.
   }
+}
+
+/** Published videos only — the public site never sees unpublished videos. */
+export async function getPublishedVideos(): Promise<WeddingVideo[]> {
+  if (!supabase) return []
+  const { data } = await supabase
+    .from('wedding_videos')
+    .select('*')
+    .eq('is_published', true)
+    .order('video_order')
+  return (data ?? []) as WeddingVideo[]
 }
