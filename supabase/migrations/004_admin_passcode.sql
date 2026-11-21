@@ -8,7 +8,7 @@
 --
 -- What changes: admin sign-in no longer uses Supabase Auth (email +
 -- password). The gold admin dot asks for a passcode ONLY. The passcode
--- is stored ONLY as a bcrypt hash (pgcrypto crypt() with gen_salt('bf'))
+-- is stored ONLY as a bcrypt hash (pgcrypto crypt() with gen_salt('bf'), called as extensions.crypt / extensions.gen_salt)
 -- in public.admin_credentials. There is NO passcode value in this file,
 -- in the code, or in any seed data — the owner sets their own passcode
 -- on first use through the admin modal. Never put a passcode value here.
@@ -55,7 +55,7 @@
 -- not claim uploads work in passcode-only mode until that is fixed
 -- with a server-side upload proxy or Edge Function.
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 -- ---------------------------------------------------------------- tables
 create table if not exists public.admin_credentials (
@@ -90,7 +90,7 @@ returns text
 language sql immutable
 set search_path = public, pg_temp
 as $$
-  select encode(digest(p_token, 'sha256'), 'hex')
+  select encode(extensions.digest(p_token, 'sha256'), 'hex')
 $$;
 
 -- Drop expired sessions; called inside the token checks.
@@ -166,7 +166,7 @@ begin
     return false;
   end if;
   insert into public.admin_credentials (id, passcode_hash, passcode_changed_at, updated_at)
-  values (1, crypt(p_new, gen_salt('bf')), now(), now())
+  values (1, extensions.crypt(p_new, extensions.gen_salt('bf')), now(), now())
   on conflict (id) do update
     set passcode_hash = excluded.passcode_hash,
         passcode_changed_at = now(),
@@ -202,7 +202,7 @@ begin
   if v_locked is not null and v_locked > now() then
     return null;
   end if;
-  if crypt(p_passcode, v_hash) = v_hash then
+  if extensions.crypt(p_passcode, v_hash) = v_hash then
     update public.admin_credentials
       set failed_attempts = 0, locked_until = null, updated_at = now()
       where id = 1;
@@ -251,11 +251,11 @@ begin
   if v_locked is not null and v_locked > now() then
     return false;
   end if;
-  if crypt(p_current, v_hash) <> v_hash then
+  if extensions.crypt(p_current, v_hash) <> v_hash then
     return false;
   end if;
   update public.admin_credentials
-    set passcode_hash = crypt(p_new, gen_salt('bf')),
+    set passcode_hash = extensions.crypt(p_new, extensions.gen_salt('bf')),
         passcode_changed_at = now(),
         failed_attempts = 0,
         locked_until = null,
