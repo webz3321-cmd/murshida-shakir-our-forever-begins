@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { supabase, supabaseConfigured, testSupabaseConnection, type ConnectionStatus } from '../lib/supabase'
+import {
+  adminPasscodeInfo,
+  adminRpc,
+  adminSessionValid,
+  changeAdminPasscode,
+  clearAdminToken,
+  getAdminToken,
+  revokeAdminSession,
+  verifyAdminPasscode,
+  supabase,
+  supabaseConfigured,
+  testSupabaseConnection,
+  type ConnectionStatus,
+} from '../lib/supabase'
 import {
   AUDIO_MAX_BYTES, AUDIO_TYPES, DEFAULT_SETTINGS, DEFAULT_THEME, POSTER_MAX_BYTES,
   VIDEO_MAX_BYTES, VIDEO_TYPES, WEDDING,
@@ -25,11 +38,13 @@ const fmtBytes = (n: number | null) =>
 
 export default function Admin() {
   const [tab, setTab] = useState<Tab>('overview')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  // Passcode-only admin: no email, no Supabase Auth sign-in anywhere.
+  // Authorisation is the session token issued by verify_admin_passcode()
+  // (migration 004), kept in sessionStorage only — never the passcode.
+  const [passcode, setPasscode] = useState('')
   const [authed, setAuthed] = useState(false)
   const [authError, setAuthError] = useState('')
-  const [userEmail, setUserEmail] = useState('')
+  const [authChecking, setAuthChecking] = useState(true)
   const [lastPassChange, setLastPassChange] = useState('')
 
   const [rsvps, setRsvps] = useState<Rsvp[]>([])
@@ -95,16 +110,30 @@ export default function Admin() {
   useEffect(() => { retestConnection() }, [retestConnection])
 
   const load = useCallback(async () => {
-    if (!supabase) return
-    const [{ data: r }, { data: e }, { data: v }, { data: t }, { data: as }, { data: s }, { data: an }] = await Promise.all([
-      supabase.from('rsvps').select('*').order('created_at', { ascending: false }),
+    if (!supabase || !getAdminToken()) return
+    // Privileged reads go through token-checked RPCs (migration 004):
+    // rsvps and analytics have no public SELECT policy, and the public
+    // videos policy only exposes published videos — the panel needs all
+    // of them. Settings, events and the audio library are public-read,
+    // so those still use direct reads.
+    const [rsvpsRes, eventsRes, videosRes, tracksRes, audioRes, settingsRes, analyticsRes] = await Promise.all([
+      adminRpc<Rsvp[]>('admin_list_rsvps', {}),
       supabase.from('wedding_events').select('*').order('event_order'),
-      supabase.from('wedding_videos').select('*').order('video_order'),
+      adminRpc<WeddingVideo[]>('admin_list_videos', {}),
       supabase.from('audio_library').select('*').order('created_at', { ascending: false }),
       supabase.from('audio_settings').select('*').eq('id', 1).maybeSingle(),
       supabase.from('wedding_settings').select('*').eq('id', 1).maybeSingle(),
-      supabase.from('analytics_events').select('visitor_id,event_type,created_at').order('created_at', { ascending: false }).limit(1000),
+      adminRpc<AnalyticsRow[]>('admin_list_analytics', {}),
     ])
+    const r = rsvpsRes.data
+    const e = eventsRes.data
+    const v = videosRes.data
+    const t = tracksRes.data
+    const as = audioRes.data
+    const s = settingsRes.data
+    const an = analyticsRes.data
+    if (rsvpsRes.error) setNotice(`Could not load RSVPs: ${rsvpsRes.error}`)
+    if (analyticsRes.error) setNotice(`Could not load analytics: ${analyticsRes.error}`)
     setRsvps((r ?? []) as Rsvp[])
     setEvents((e ?? []) as WeddingEvent[])
     setVideos((v ?? []) as WeddingVideo[])
@@ -149,30 +178,37 @@ export default function Admin() {
 
   useEffect(() => {
     if (!supabase) return
-    void supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
+    // Passcode session only: validate the token stored by the admin dot.
+    // No Supabase Auth session is used anywhere in this panel.
+    void (async () => {
+      const valid = await adminSessionValid()
+      setAuthChecking(false)
+      if (valid) {
         setAuthed(true)
-        setUserEmail(data.session.user.email ?? '')
-        setLastPassChange(data.session.user.updated_at ?? '')
-        void load()
+        const info = await adminPasscodeInfo()
+        if (info?.passcode_changed_at) setLastPassChange(info.passcode_changed_at)
+        await load()
       }
-    })
+    })()
   }, [load])
 
   async function login(e: React.FormEvent) {
     e.preventDefault()
     setAuthError('')
     if (!supabase) return setAuthError('Supabase is not configured yet — see README.')
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return setAuthError(error.message)
+    if (passcode.length < 4) return setAuthError('The passcode must be at least 4 characters.')
+    const token = await verifyAdminPasscode(passcode)
+    if (!token) return setAuthError('That passcode is not correct. Please try again.')
+    setPasscode('')
     setAuthed(true)
-    setUserEmail(data.session?.user.email ?? email)
-    setLastPassChange(data.session?.user.updated_at ?? '')
+    const info = await adminPasscodeInfo()
+    if (info?.passcode_changed_at) setLastPassChange(info.passcode_changed_at)
     await load()
   }
 
   async function logout() {
-    await supabase?.auth.signOut()
+    await revokeAdminSession()
+    clearAdminToken()
     setAuthed(false)
   }
 
@@ -208,14 +244,15 @@ export default function Admin() {
 
   async function deleteRsvp(id: string) {
     if (!supabase || !window.confirm('Delete this RSVP?')) return
-    await supabase.from('rsvps').delete().eq('id', id)
+    const { data, error } = await adminRpc<boolean>('admin_delete_rsvp', { p_id: id })
+    if (error || data !== true) return setNotice(error ?? 'Could not delete this RSVP — your admin session may have expired. Unlock the panel again.')
     await load()
   }
 
   async function saveWeddingSettings(patch: Record<string, unknown>) {
     if (!supabase) return setNotice('Supabase is not configured — settings are kept locally for this preview only.')
-    const { error } = await supabase.from('wedding_settings').upsert({ id: 1, ...patch, updated_at: new Date().toISOString() })
-    if (error) return setNotice(`Could not save: ${error.message} — have you run migrations 001, 002 and 003? See SUPABASE_SETUP.md.`)
+    const { data, error } = await adminRpc<boolean>('admin_upsert_wedding_settings', { p_patch: patch })
+    if (error || data !== true) return setNotice(`Could not save: ${error ?? 'admin session expired'} — have you run migrations 001, 002, 003 and 004? See SUPABASE_SETUP.md.`)
     setDirty(false)
     setNotice('Saved and published.')
     await load()
@@ -224,12 +261,12 @@ export default function Admin() {
   async function addEvent(e: React.FormEvent) {
     e.preventDefault()
     if (!supabase || !newEvent.title || !newEvent.event_time) return
-    const { error } = await supabase.from('wedding_events').insert({
-      title: newEvent.title, event_time: newEvent.event_time,
-      description: newEvent.description || null, location: newEvent.location || null,
-      event_order: events.length,
+    const { data, error } = await adminRpc<string | null>('admin_insert_event', {
+      p_title: newEvent.title, p_event_time: newEvent.event_time,
+      p_description: newEvent.description || null, p_location: newEvent.location || null,
+      p_event_order: events.length,
     })
-    if (error) return setNotice(error.message)
+    if (error || !data) return setNotice(error ?? 'Could not add the event — your admin session may have expired.')
     setNewEvent({ title: '', event_time: '', description: '', location: '' })
     setNotice('Event added.')
     await load()
@@ -237,7 +274,8 @@ export default function Admin() {
 
   async function deleteEvent(id: string) {
     if (!supabase) return
-    await supabase.from('wedding_events').delete().eq('id', id)
+    const { data, error } = await adminRpc<boolean>('admin_delete_event', { p_id: id })
+    if (error || data !== true) return setNotice(error ?? 'Could not delete the event.')
     await load()
   }
 
@@ -259,16 +297,20 @@ export default function Admin() {
     if (!newVideo.title.trim()) return setVideoError('Give the video a title first.')
     setVideoBusy(true)
     const path = `videos/${Date.now()}-${videoFile.name.replace(/\s+/g, '-')}`
+    // Storage note (honest limitation, see README / SUPABASE_SETUP.md):
+    // bucket policies still check Supabase Auth, so a passcode-only
+    // session cannot upload a file directly. If this upload is rejected,
+    // the error below says so plainly instead of failing silently.
     const { error: upErr } = await supabase.storage.from('wedding-videos').upload(path, videoFile, { contentType: videoFile.type })
-    if (upErr) { setVideoBusy(false); return setVideoError(upErr.message) }
+    if (upErr) { setVideoBusy(false); return setVideoError(`Storage upload was blocked: ${upErr.message} — video/audio file uploads still need a Supabase Auth session (see SUPABASE_SETUP.md, "Storage uploads"). The video details were not saved.`) }
     const { data: pub } = supabase.storage.from('wedding-videos').getPublicUrl(path)
-    const { error } = await supabase.from('wedding_videos').insert({
-      title: newVideo.title.trim(), description: newVideo.description.trim() || null,
-      video_url: pub.publicUrl, storage_path: path, is_featured: videos.length === 0,
-      is_published: false, video_order: videos.length, file_size: videoFile.size,
+    const { data, error } = await adminRpc<string | null>('admin_insert_video', {
+      p_title: newVideo.title.trim(), p_description: newVideo.description.trim() || null,
+      p_video_url: pub.publicUrl, p_storage_path: path, p_is_featured: videos.length === 0,
+      p_is_published: false, p_video_order: videos.length, p_file_size: videoFile.size,
     })
     setVideoBusy(false)
-    if (error) return setVideoError(error.message)
+    if (error || !data) return setVideoError(error ?? 'Could not save the video details — your admin session may have expired.')
     setNewVideo({ title: '', description: '' })
     setVideoFile(null)
     setNotice('Video uploaded. Publish it below to show it on the public site.')
@@ -277,14 +319,17 @@ export default function Admin() {
 
   async function updateVideo(id: string, patch: Partial<WeddingVideo>) {
     if (!supabase) return
-    const { error } = await supabase.from('wedding_videos').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
-    if (error) return setNotice(error.message)
+    const { data, error } = await adminRpc<boolean>('admin_update_video', { p_id: id, p_patch: patch })
+    if (error || data !== true) return setNotice(error ?? 'Could not save the video — your admin session may have expired.')
     await load()
   }
 
   async function setFeatured(id: string) {
     if (!supabase) return
-    await supabase.from('wedding_videos').update({ is_featured: false }).neq('id', id)
+    const others = videos.filter((v) => v.id !== id && v.is_featured)
+    for (const o of others) {
+      await adminRpc<boolean>('admin_update_video', { p_id: o.id, p_patch: { is_featured: false } })
+    }
     await updateVideo(id, { is_featured: true })
     setNotice('Featured video updated.')
   }
@@ -295,8 +340,8 @@ export default function Admin() {
     const j = i + dir
     if (j < 0 || j >= sorted.length || !supabase) return
     const other = sorted[j]
-    await supabase.from('wedding_videos').update({ video_order: other.video_order }).eq('id', v.id)
-    await supabase.from('wedding_videos').update({ video_order: v.video_order }).eq('id', other.id)
+    await adminRpc<boolean>('admin_update_video', { p_id: v.id, p_patch: { video_order: other.video_order } })
+    await adminRpc<boolean>('admin_update_video', { p_id: other.id, p_patch: { video_order: v.video_order } })
     await load()
   }
 
@@ -307,10 +352,10 @@ export default function Admin() {
     setVideoBusy(true)
     const path = `videos/${Date.now()}-${file.name.replace(/\s+/g, '-')}`
     const { error: upErr } = await supabase.storage.from('wedding-videos').upload(path, file, { contentType: file.type })
-    if (upErr) { setVideoBusy(false); return setVideoError(upErr.message) }
+    if (upErr) { setVideoBusy(false); return setVideoError(`Storage upload was blocked: ${upErr.message} — video/audio file uploads still need a Supabase Auth session (see SUPABASE_SETUP.md, "Storage uploads").`) }
     const { data: pub } = supabase.storage.from('wedding-videos').getPublicUrl(path)
     const oldPath = v.storage_path
-    await supabase.from('wedding_videos').update({ video_url: pub.publicUrl, storage_path: path, file_size: file.size, updated_at: new Date().toISOString() }).eq('id', v.id)
+    await adminRpc<boolean>('admin_update_video', { p_id: v.id, p_patch: { video_url: pub.publicUrl, storage_path: path, file_size: file.size } })
     if (oldPath) await supabase.storage.from('wedding-videos').remove([oldPath])
     setVideoBusy(false)
     setNotice('Video file replaced.')
@@ -323,10 +368,10 @@ export default function Admin() {
     if (file.size > POSTER_MAX_BYTES) return setVideoError('Poster must be under 5 MB.')
     const path = `posters/${Date.now()}-${file.name.replace(/\s+/g, '-')}`
     const { error: upErr } = await supabase.storage.from('wedding-images').upload(path, file, { contentType: file.type })
-    if (upErr) return setVideoError(upErr.message)
+    if (upErr) return setVideoError(`Storage upload was blocked: ${upErr.message} — image uploads still need a Supabase Auth session (see SUPABASE_SETUP.md, "Storage uploads").`)
     const { data: pub } = supabase.storage.from('wedding-images').getPublicUrl(path)
     const oldPoster = v.poster_path
-    await supabase.from('wedding_videos').update({ poster_url: pub.publicUrl, poster_path: path }).eq('id', v.id)
+    await adminRpc<boolean>('admin_update_video', { p_id: v.id, p_patch: { poster_url: pub.publicUrl, poster_path: path } })
     if (oldPoster) await supabase.storage.from('wedding-images').remove([oldPoster])
     setNotice('Poster updated.')
     await load()
@@ -336,7 +381,8 @@ export default function Admin() {
     if (!supabase || !window.confirm(`Delete "${v.title}"?`)) return
     if (v.storage_path) await supabase.storage.from('wedding-videos').remove([v.storage_path])
     if (v.poster_path) await supabase.storage.from('wedding-images').remove([v.poster_path])
-    await supabase.from('wedding_videos').delete().eq('id', v.id)
+    const { data, error } = await adminRpc<boolean>('admin_delete_video', { p_id: v.id })
+    if (error || data !== true) return setNotice(error ?? 'Could not delete the video.')
     await load()
   }
 
@@ -353,14 +399,14 @@ export default function Admin() {
     setAudioBusy(true)
     const path = `audio/${Date.now()}-${audioFile.name.replace(/\s+/g, '-')}`
     const { error: upErr } = await supabase.storage.from('wedding-audio').upload(path, audioFile, { contentType: audioFile.type })
-    if (upErr) { setAudioBusy(false); return setAudioError(upErr.message) }
+    if (upErr) { setAudioBusy(false); return setAudioError(`Storage upload was blocked: ${upErr.message} — audio file uploads still need a Supabase Auth session (see SUPABASE_SETUP.md, "Storage uploads").`) }
     const { data: pub } = supabase.storage.from('wedding-audio').getPublicUrl(path)
-    const { error } = await supabase.from('audio_library').insert({
-      title: audioTitle.trim() || audioFile.name, file_url: pub.publicUrl,
-      storage_path: path, audio_type: audioType, file_size: audioFile.size,
+    const { data, error } = await adminRpc<string | null>('admin_insert_audio', {
+      p_title: audioTitle.trim() || audioFile.name, p_file_url: pub.publicUrl,
+      p_storage_path: path, p_audio_type: audioType, p_file_size: audioFile.size,
     })
     setAudioBusy(false)
-    if (error) return setAudioError(error.message)
+    if (error || !data) return setAudioError(error ?? 'Could not save the audio details — your admin session may have expired.')
     setAudioFile(null); setAudioTitle('')
     setNotice('Audio uploaded.')
     await load()
@@ -369,17 +415,17 @@ export default function Admin() {
   async function saveAudioSettings() {
     if (!supabase) return setNotice('Supabase is not configured.')
     const toUuid = (s: string) => (s ? s : null)
-    const { error } = await supabase.from('audio_settings').upsert({
-      id: 1,
-      background_music_id: toUuid(audioSettings.background_music_id),
-      opening_sound_id: toUuid(audioSettings.opening_sound_id),
-      envelope_sound_id: toUuid(audioSettings.envelope_sound_id),
-      button_sound_id: toUuid(audioSettings.button_sound_id),
-      music_enabled: audioSettings.music_enabled, effects_enabled: audioSettings.effects_enabled,
-      volume: audioSettings.volume, loop_enabled: audioSettings.loop_enabled,
-      updated_at: new Date().toISOString(),
+    const { data, error } = await adminRpc<boolean>('admin_upsert_audio_settings', {
+      p_patch: {
+        background_music_id: toUuid(audioSettings.background_music_id),
+        opening_sound_id: toUuid(audioSettings.opening_sound_id),
+        envelope_sound_id: toUuid(audioSettings.envelope_sound_id),
+        button_sound_id: toUuid(audioSettings.button_sound_id),
+        music_enabled: audioSettings.music_enabled, effects_enabled: audioSettings.effects_enabled,
+        volume: audioSettings.volume, loop_enabled: audioSettings.loop_enabled,
+      },
     })
-    if (error) return setNotice(error.message)
+    if (error || data !== true) return setNotice(error ?? 'Could not save audio settings — your admin session may have expired.')
     setNotice('Audio settings published.')
     await load()
   }
@@ -387,26 +433,27 @@ export default function Admin() {
   async function deleteTrack(t: AudioTrack) {
     if (!supabase || !window.confirm(`Delete "${t.title}"?`)) return
     if (t.storage_path) await supabase.storage.from('wedding-audio').remove([t.storage_path])
-    await supabase.from('audio_library').delete().eq('id', t.id)
+    const { data, error } = await adminRpc<boolean>('admin_delete_audio', { p_id: t.id })
+    if (error || data !== true) return setNotice(error ?? 'Could not delete the audio track.')
     await load()
   }
 
-  // ---- Security: change password (current verified server-side first) ----
+  // ---- Security: change passcode (current verified server-side first) ----
+  // The passcode is stored only as a bcrypt hash (migration 004). The
+  // change is verified and applied by set_admin_passcode() on the
+  // server; changing it revokes every existing admin session.
   async function changePassword(e: React.FormEvent) {
     e.preventDefault()
     setSecError(''); setSecNotice('')
-    if (newPass.length < 8) return setSecError('The new passcode must be at least 8 characters.')
+    if (newPass.length < 4) return setSecError('The new passcode must be at least 4 characters.')
     if (newPass !== confirmPass) return setSecError('The new passcode and its confirmation do not match.')
     if (!supabase) return setSecError('Supabase is not configured.')
-    // Verify the current passcode with the server before changing anything.
-    const { error: verifyErr } = await supabase.auth.signInWithPassword({ email: userEmail, password: currentPass })
-    if (verifyErr) return setSecError('The current passcode is not correct.')
-    const { error } = await supabase.auth.updateUser({ password: newPass })
-    if (error) return setSecError(error.message)
+    const ok = await changeAdminPasscode(currentPass, newPass)
+    if (!ok) return setSecError('The current passcode is not correct, or the change was locked out after too many wrong attempts.')
     setCurrentPass(''); setNewPass(''); setConfirmPass('')
-    setSecNotice('Passcode changed. Your last-change date below has been updated.')
-    const { data } = await supabase.auth.getSession()
-    setLastPassChange(data.session?.user.updated_at ?? new Date().toISOString())
+    setSecNotice('Passcode changed. All other admin sessions were signed out — please sign in again with the new passcode.')
+    const info = await adminPasscodeInfo()
+    if (info?.passcode_changed_at) setLastPassChange(info.passcode_changed_at)
   }
 
   if (!supabaseConfigured) {
@@ -420,10 +467,9 @@ export default function Admin() {
         </p>
         <ol className="mt-4 list-decimal space-y-2 pl-6 leading-relaxed text-brown-light">
           <li>Create a free project at supabase.com.</li>
-          <li>In the Supabase SQL editor, run <code>supabase/migrations/001_init.sql</code>, then <code>002_videos.sql</code>, then <code>003_complete.sql</code>, then <code>supabase/storage.sql</code>.</li>
-          <li>Create the admin user in Supabase Auth (Authentication → Users), then insert that user&rsquo;s row into <code>public.profiles</code> with role <code>admin</code>.</li>
+          <li>In the Supabase SQL editor, run <code>supabase/migrations/001_init.sql</code>, then <code>002_videos.sql</code>, then <code>003_complete.sql</code>, then <code>004_admin_passcode.sql</code>, then <code>supabase/storage.sql</code>.</li>
           <li>Copy <code>.env.example</code> to <code>.env</code> and add your <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> (Supabase Dashboard → Project Settings → API). In Vercel, add the same two variables under Settings → Environment Variables and redeploy.</li>
-          <li>Come back here and sign in with the admin email and the password you chose in Supabase Auth. No admin password is hardcoded anywhere in this repo.</li>
+          <li>Come back here and tap the gold admin dot on the public site. The first time it opens, set your own admin passcode (at least 4 characters) — no admin passcode is hardcoded anywhere in this repo, and no email or Supabase Auth account is needed.</li>
         </ol>
         <a href="/" className="mt-6 inline-block rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">BACK TO INVITATION</a>
       </main>
@@ -433,18 +479,23 @@ export default function Admin() {
   if (!authed) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5">
-        <h1 className="text-center font-serif text-3xl font-semibold">Admin Login</h1>
+        <h1 className="text-center font-serif text-3xl font-semibold">Admin Access</h1>
         <p className="mt-2 text-center text-sm text-brown-light">
-          Sign in with your Supabase Auth admin account. (The public site&rsquo;s gold admin dot opens this same sign-in.)
+          Enter your administrator passcode to continue. (The public site&rsquo;s gold admin dot opens this same passcode lock. No email, no Supabase Auth account.)
         </p>
-        <form onSubmit={login} className="mt-6 space-y-4 rounded-2xl border border-gold/40 bg-white p-6 shadow-sm">
-          <label className="block"><span className="text-sm font-medium">Email</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full rounded-lg border border-gold/50 bg-ivory px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" /></label>
-          <label className="block"><span className="text-sm font-medium">Password</span>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 w-full rounded-lg border border-gold/50 bg-ivory px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" /></label>
-          {authError && <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm">{authError}</p>}
-          <button className="w-full rounded-full bg-brown py-3 text-sm tracking-widest text-ivory">SIGN IN</button>
-        </form>
+        {authChecking ? (
+          <p className="mt-6 text-center text-sm text-brown-light">Checking your admin session…</p>
+        ) : (
+          <form onSubmit={login} className="mt-6 space-y-4 rounded-2xl border border-gold/40 bg-white p-6 shadow-sm">
+            <label className="block"><span className="text-sm font-medium">Passcode</span>
+              <input type="password" value={passcode} onChange={(e) => setPasscode(e.target.value)} required autoComplete="current-password" placeholder="••••" className="mt-1 w-full rounded-lg border border-gold/50 bg-ivory px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" /></label>
+            {authError && <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm">{authError}</p>}
+            <button className="w-full rounded-full bg-brown py-3 text-sm tracking-widest text-ivory">UNLOCK ADMIN PANEL</button>
+            <p className="text-center text-xs leading-relaxed text-brown-light">
+              First time here? If no passcode has been set yet, use the gold admin dot on the public site to set one. If you forgot the passcode, see the recovery steps in Admin → Security &amp; Passcode (or SUPABASE_SETUP.md) — there is no public reset.
+            </p>
+          </form>
+        )}
         <a href="/" className="mt-4 text-center text-sm text-brown-light underline">Back to invitation</a>
       </main>
     )
@@ -464,7 +515,7 @@ export default function Admin() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-3xl font-semibold">Admin Dashboard</h1>
-          <p className="mt-1 text-sm text-brown-light">Signed in as {userEmail} · Murshida &amp; Shakir</p>
+          <p className="mt-1 text-sm text-brown-light">Signed in with your admin passcode · Murshida &amp; Shakir</p>
         </div>
         <div className="flex gap-2">
           <a href="/" className="rounded-full border border-gold/60 px-4 py-2 text-sm">View site</a>
@@ -502,7 +553,7 @@ export default function Admin() {
                       <p className="mt-1 text-sm text-brown-light">Not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then redeploy. See SUPABASE_SETUP.md.</p>
                     )}
                     {connStatus.state === 'failed' && (
-                      <p className="mt-1 text-sm text-brown-light">Connection failed: {connStatus.error} Check the env vars and that migrations 001–003 ran.</p>
+                      <p className="mt-1 text-sm text-brown-light">Connection failed: {connStatus.error} Check the env vars and that migrations 001–004 ran.</p>
                     )}
                   </div>
                   <div className="flex items-center gap-3">
@@ -909,21 +960,21 @@ export default function Admin() {
             <section className="rounded-2xl border border-gold/40 bg-white p-6">
               <h2 className="font-serif text-2xl">Security &amp; Passcode</h2>
               <p className="mt-2 text-sm leading-relaxed text-brown-light">
-                Signed in as <strong>{userEmail}</strong>. Your passcode is verified by Supabase Auth on the
-                server — it is never displayed here and never stored in the code or the database.
-                Changing it requires your current passcode first. Supabase Auth rate-limits repeated
-                failed sign-ins. If you forget your passcode, use Supabase Auth&rsquo;s password recovery
-                (Authentication → Users in the Supabase dashboard) — there is no public reset link on this site.
+                Signed in with your admin passcode. The passcode is stored server-side only as a
+                bcrypt hash (migration 004) — it is never displayed here, never stored in the code,
+                and never readable through the API. Changing it requires your current passcode first,
+                and changing it signs out every other admin session. Five wrong attempts lock
+                verification for 5 minutes.
               </p>
               <p className="mt-3 text-sm text-brown-light">
                 Last passcode change: <strong>{lastPassChange ? new Date(lastPassChange).toLocaleString() : 'Unknown'}</strong>{' '}
-                (from your Supabase Auth account record).
+                (from the server).
               </p>
               <form onSubmit={changePassword} className="mt-5 space-y-3">
                 <label className="block text-sm font-medium">Current passcode
                   <input type="password" value={currentPass} onChange={(e) => setCurrentPass(e.target.value)} required autoComplete="current-password" className={inputCls} />
                 </label>
-                <label className="block text-sm font-medium">New passcode (at least 8 characters)
+                <label className="block text-sm font-medium">New passcode (at least 4 characters)
                   <input type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)} required autoComplete="new-password" className={inputCls} />
                 </label>
                 <label className="block text-sm font-medium">Confirm new passcode
@@ -933,6 +984,19 @@ export default function Admin() {
                 {secNotice && <p className="rounded-lg bg-cream p-3 text-sm">{secNotice}</p>}
                 <button className="rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">CHANGE PASSCODE</button>
               </form>
+              <div className="mt-6 rounded-xl border border-gold/40 bg-cream p-4">
+                <h3 className="font-medium">Forgot your passcode?</h3>
+                <p className="mt-1 text-sm leading-relaxed text-brown-light">
+                  There is no public reset — anyone could use it. Only you, in the Supabase dashboard,
+                  can reset it. Run this in the Supabase SQL Editor, then open the gold admin dot on
+                  the public site and set a new passcode when it asks:
+                </p>
+                <pre className="mt-2 overflow-x-auto rounded-lg bg-white p-3 text-xs">delete from public.admin_credentials where id = 1;</pre>
+                <p className="mt-2 text-xs text-brown-light">
+                  That deletes only the stored hash (and lets the setup form appear again). It does not
+                  delete any RSVPs, videos, audio or settings. Full steps: SUPABASE_SETUP.md.
+                </p>
+              </div>
               <button onClick={logout} className="mt-6 rounded-full border border-gold/60 px-6 py-3 text-sm">SIGN OUT</button>
             </section>
           )}

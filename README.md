@@ -21,7 +21,7 @@ A standalone Vite + React + TypeScript + Tailwind CSS app with Supabase as the b
 - Islamic blessing (a general blessing, not presented as a Quran verse or Hadith)
 - RSVP form with validation, duplicate prevention by phone, and a hashed edit token
 - Floating music player (play/pause, mute, volume, single audio instance)
-- **Admin dot** — a tiny discreet champagne-gold dot, fixed at the bottom-right of every public page, opening a minimal ADMIN ACCESS modal. Sign-in is verified server-side by Supabase Auth; nothing about the passcode is stored in the code.
+- **Admin dot** — a tiny discreet champagne-gold dot, fixed at the bottom-right of every public page, opening a minimal ADMIN ACCESS modal that asks for a **passcode only** (no email, no Supabase Auth sign-in). The passcode is stored server-side only as a bcrypt hash (migration 004); a correct passcode issues a 12-hour session token, and five wrong attempts lock verification for 5 minutes. Nothing about the passcode is stored in the code.
 - Admin dashboard at `/admin` — sidebar with Dashboard (real stats incl. unique visitors and published videos), Invitation Editor, Wedding Details, Music Manager, Video Manager, RSVP Manager, Timeline, Countdown Settings, Theme & Design, Website Settings, Security & Passcode
 
 > **The photo gallery has been completely removed** from this version and replaced by the video section. There is no gallery component, gallery route or gallery UI left in the code. The `gallery` table and bucket from migration 001 are kept only for backwards compatibility with older databases — nothing reads them.
@@ -43,34 +43,31 @@ Without Supabase configured, the site still renders: the video section shows its
 
 **Full step-by-step guide: [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)** — it covers
 creating the project, copying the two values, running the SQL in order,
-creating the admin user, setting the Vercel variables, and a verification
+setting the admin passcode, setting the Vercel variables, and a verification
 checklist. Short version:
 
 1. Create a project at https://supabase.com.
-2. In the SQL editor, run `supabase/migrations/001_init.sql`, then `002_videos.sql`, then `003_complete.sql` (idempotent — safe to re-run, and usable on its own on a fresh project), then `supabase/storage.sql`.
-3. In **Authentication → Users**, create an admin user, then in the SQL editor:
-   ```sql
-   insert into public.profiles (id, email, role)
-   values ('<the-user-uuid>', 'you@example.com', 'admin');
-   ```
-   You choose the admin password yourself in Supabase Auth — no password is in this repo.
-4. Set the environment variables (never commit a real `.env`, never use a service-role key in the browser):
+2. In the SQL editor, run `supabase/migrations/001_init.sql`, then `002_videos.sql`, then `003_complete.sql` (idempotent — safe to re-run, and usable on its own on a fresh project), then `004_admin_passcode.sql`, then `supabase/storage.sql`.
+3. Set the environment variables (never commit a real `.env`, never use a service-role key in the browser):
    ```
    VITE_SUPABASE_URL=https://your-project.supabase.co
    VITE_SUPABASE_ANON_KEY=your-anon-key
    ```
    Get them from Supabase Dashboard → Project Settings → API. In Vercel, add them under Settings → Environment Variables (Production) and **redeploy** — Vite bakes them into the build.
+4. Open the live site and tap the gold admin dot: the first time it opens, set your own admin passcode (at least 4 characters). From then on the dot asks for that passcode only — no email, no Supabase Auth account.
 5. Upload wedding videos (MP4/WebM, max 25 MB) in Admin → Video Manager — files go to the `wedding-videos` bucket, posters to `wedding-images`, audio (MP3/WAV, max 15 MB) to `wedding-audio`. Larger videos: compress to 720p first (e.g. HandBrake). Add real wedding-day events in Admin → Timeline.
 
 The Admin Dashboard shows a real **Supabase: Connected / Not configured / Connection failed** status (measured with a live settings read, never assumed). Without Supabase configured, the site still renders with the honest "Supabase is not configured" setup message — it is not hidden or faked.
 
-Row Level Security is in the migrations: anonymous visitors can read public settings, published videos, events and audio and insert an RSVP or an anonymous analytics event; only admins can read RSVPs, analytics or write settings. Guest phone numbers are never exposed publicly. `SUPABASE_SETUP.md` includes a SQL snippet to prove anonymous RSVP reads are blocked.
+Row Level Security is in the migrations: anonymous visitors can read public settings, published videos, events and audio and insert an RSVP or an anonymous analytics event; only a passcode session (migration 004, token checked inside server-side functions) can read RSVPs or analytics or write settings. Guest phone numbers are never exposed publicly. `SUPABASE_SETUP.md` includes a SQL snippet to prove anonymous RSVP reads are blocked.
 
 ### Admin access
 
-- On the public site, tap the tiny gold dot at the bottom-right corner. It opens the ADMIN ACCESS modal; sign in with your Supabase Auth admin email and passcode. Supabase Auth verifies the credentials server-side and rate-limits repeated failed sign-ins.
-- Or go straight to `/admin` and sign in there.
-- Change your passcode in Admin → Security & Passcode (current passcode is verified server-side first). If you forget it, use Supabase Auth password recovery in the Supabase dashboard — there is no public reset link on this site. No passcode value is ever hardcoded or stored in this repo.
+- On the public site, tap the tiny gold dot at the bottom-right corner. It opens the ADMIN ACCESS modal; enter your admin passcode only. The passcode is verified server-side against a bcrypt hash, five wrong attempts lock verification for 5 minutes, and a correct passcode issues a 12-hour session token.
+- Or go straight to `/admin` and enter the passcode there.
+- Change your passcode in Admin → Security & Passcode (current passcode is verified server-side first; changing it signs out every other admin session). If you forget it, there is no public reset — run `delete from public.admin_credentials where id = 1;` in the Supabase SQL Editor, then set a new passcode from the gold dot. No passcode value is ever hardcoded or stored in this repo.
+
+**Honest limitation — Storage uploads:** all admin *database* reads/writes are protected by the passcode session token, but binary file uploads to Supabase Storage still depend on Supabase Auth — the bucket policies check `public.is_admin()`, which needs an Auth JWT. In passcode-only mode a direct browser upload may be rejected; the Admin panel says so plainly instead of failing silently. See `SUPABASE_SETUP.md` ("Storage uploads") for the options. Do not relax the bucket policies to allow anyone to upload.
 
 ## Venue — please verify
 

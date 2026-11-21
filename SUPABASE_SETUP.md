@@ -48,9 +48,12 @@ Do them one at a time, in this order:
 2. `supabase/migrations/002_videos.sql`
 3. `supabase/migrations/003_complete.sql` — the consolidated migration.
    It is idempotent: it creates anything missing and is safe to re-run, and
-   it also works on its own on a fresh project. Running all three in order
-   is still the recommended path.
-4. `supabase/storage.sql` — creates the Storage buckets.
+   it also works on its own on a fresh project. Running all the files in
+   order is still the recommended path.
+4. `supabase/migrations/004_admin_passcode.sql` — passcode-only admin
+   access (tables `admin_credentials` / `admin_sessions` and the
+   token-checked `admin_*` functions). Safe to re-run.
+5. `supabase/storage.sql` — creates the Storage buckets.
 
 What these create:
 
@@ -70,35 +73,63 @@ What these create:
 
 If a run reports an error, read it before re-running: the most common
 cause is running a file twice without the `IF NOT EXISTS` guards (only
-003 and `storage.sql` are fully re-runnable) or running `storage.sql`
-before the migrations (it needs the `public.is_admin()` helper from the
-migrations).
+003, 004 and `storage.sql` are fully re-runnable) or running
+`storage.sql` before the migrations (it needs the `public.is_admin()`
+helper from the migrations).
 
-## 4. Create the admin user and give them the admin role
+## 4. Set your admin passcode — passcode only, no email, no Auth account
 
-The admin sign-in is Supabase Auth (email + password). **You choose the
-password yourself in Supabase — no password is written in this repo, and
-no initial password is set by the code.**
+Admin access is a **passcode lock, not an email/password login**. There
+is no Supabase Auth admin user to create, and no passcode value is
+written anywhere in this repo — you choose your own passcode on first
+use, and it is stored server-side only as a bcrypt hash
+(`admin_credentials.passcode_hash`, migration 004).
 
-1. In the Supabase dashboard, open **Authentication → Users** → **Add user**
-   → **Create new user**.
-2. Enter the admin email address and choose a strong password. Leave
-   **Auto Confirm User** on, and click **Create user**.
-3. On the user row, copy the user's UUID (click the user to see it).
-4. Open the **SQL Editor** → **New query** and run, replacing the
-   placeholders with the real values from step 3:
-   ```sql
-   insert into public.profiles (id, email, role)
-   values ('<the-user-uuid-from-step-3>', 'you@example.com', 'admin')
-   on conflict (id) do update set role = 'admin';
-   ```
-5. That user — and only that user — can now sign in to `/admin` and manage
-   the site. Anyone else who somehow signs in stays a `guest` and sees
-   nothing admin-only.
+1. Finish step 5 below first (env vars + redeploy), then open the live
+   site and tap the **tiny gold dot** at the bottom-right corner.
+2. The ADMIN ACCESS modal will say no passcode is set yet and show a
+   **setup form**: enter your passcode (at least 4 characters) and
+   confirm it, then tap **SET PASSCODE & UNLOCK**. That passcode is now
+   the only way in — keep it private and do not share it.
+3. From then on, the same gold dot (or going straight to `/admin`)
+   asks only for that passcode: **"Enter your administrator passcode
+   to continue."** A correct passcode issues a 12-hour session token;
+   five wrong attempts lock verification for 5 minutes.
+4. Change the passcode any time in **Admin → Security & Passcode**
+   (current passcode first — changing it signs out every other admin
+   session).
 
-If you forget the admin password later, use Supabase Auth password
-recovery (Authentication → Users → the user → **Send password reset
-email**). There is no public password-reset link on the wedding site.
+### If you forget the passcode
+
+There is **no public reset** — anyone could use it. Only you, in the
+Supabase dashboard, can reset it. Run this in the **SQL Editor**:
+
+```sql
+delete from public.admin_credentials where id = 1;
+```
+
+That deletes only the stored hash (not RSVPs, videos, audio or
+settings). Then open the gold admin dot again: because no passcode
+exists now, the setup form appears and you set a new passcode.
+
+### Storage uploads — one honest limitation
+
+All admin **database** reads and writes (settings, RSVP list/delete,
+video/audio metadata, events, analytics) are protected by the
+passcode session token, checked inside server-side functions
+(migration 004). **Binary file uploads to Supabase Storage are the
+exception in this pass:** the Storage bucket policies check
+`public.is_admin()`, which needs a Supabase Auth JWT, so a
+passcode-only browser session cannot upload a file directly to a
+bucket. If a video/audio/poster upload is rejected, the Admin panel
+says so plainly instead of failing silently. Do not relax the bucket
+policies to "allow anyone to upload" to work around this — that would
+let anyone fill your Storage. The proper fix is a server-side upload
+proxy or Edge Function; until that exists, upload files through the
+Supabase dashboard (Storage → the bucket → Upload) and then add the
+video/audio row in the Admin panel with the file's public URL, or
+keep a Supabase Auth admin account solely for uploads (it is never
+used for the admin login UI).
 
 ## 5. Set the environment variables
 
@@ -137,7 +168,9 @@ backend "done" until every item passes:
       Dashboard, top card). "Not configured" means the env vars are not
       in the deployment; "Connection failed" shows the exact error.
 - [ ] Admin sign-in works at `/admin` (or via the gold dot on the public
-      site) with the email and password from step 4.
+      site) with the passcode you set in step 4 — passcode only, no email.
+      The first open shows the setup form; later opens ask only for the
+      passcode.
 - [ ] A test RSVP submitted on the public site appears in Admin → RSVP
       Manager, and the Dashboard counts move.
 - [ ] Uploading a video in Admin → Video Manager (MP4/WebM, max 25 MB;
@@ -173,7 +206,8 @@ backend "done" until every item passes:
 | --- | --- |
 | "Supabase is not configured" on the live site | Env vars are missing in Vercel, or you did not redeploy after adding them. |
 | Admin Dashboard says "Connection failed" | Wrong Project URL / anon key, or the project is paused. The card shows the exact error. |
-| Sign-in fails with "Invalid login credentials" | Wrong email/password, or the user was not created / not confirmed in Supabase Auth. |
-| Admin signs in but sees no data / cannot save | The `profiles` row is missing or its role is not `admin` (step 4). |
-| "Could not save — have you run migrations 001–003?" | A migration was skipped. Run them in order (step 3). |
-| Video/audio upload fails | Bucket missing (run `storage.sql`), file over the size cap, or wrong format — the Admin error message says which. |
+| Sign-in fails with "That passcode is not correct" | Wrong passcode, or migration 004 has not run. After 5 wrong attempts verification locks for 5 minutes — wait, then try again. |
+| Admin unlocks but sees no data / cannot save | A migration was skipped (run 001–004 in order), or the admin session expired — unlock the panel again from the gold dot. |
+| "Could not save — have you run migrations 001, 002, 003 and 004?" | A migration was skipped. Run them in order (step 3). |
+| Video/audio upload fails | Bucket missing (run `storage.sql`), file over the size cap, or wrong format — or the Storage limitation in step 4: binary uploads still need a Supabase Auth session in this pass. The Admin error message says which. |
+| Forgot the passcode | No public reset. Run `delete from public.admin_credentials where id = 1;` in the SQL Editor, then set a new passcode from the gold dot (step 4). |
