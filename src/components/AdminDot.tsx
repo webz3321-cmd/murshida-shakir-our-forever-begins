@@ -97,7 +97,8 @@ export default function AdminDot() {
               {!supabaseConfigured && (
                 <p className="rounded-lg bg-cream p-3 text-xs leading-relaxed text-brown-light">
                   Supabase is not configured in this deployment yet. Set VITE_SUPABASE_URL and
-                  VITE_SUPABASE_ANON_KEY, run the migrations, and create an admin user first.
+                  VITE_SUPABASE_ANON_KEY, run migrations 001, 002 and 003 plus storage.sql, and create an admin
+                  user first. Full steps: SUPABASE_SETUP.md in the repo.
                 </p>
               )}
               <button

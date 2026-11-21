@@ -39,6 +39,38 @@ export async function recordAnalyticsEvent(eventType: 'visit' | 'invitation_open
   }
 }
 
+export type ConnectionStatus =
+  | { state: 'not-configured' }
+  | { state: 'connected' }
+  | { state: 'failed'; error: string }
+
+/**
+ * Test the live Supabase connection with a lightweight read of the
+ * single wedding_settings row. Never throws. Callers must use the
+ * returned state — never show a "connected" tick without calling this.
+ * Times out after 8 seconds so a stalled network cannot hang the page.
+ */
+export async function testSupabaseConnection(): Promise<ConnectionStatus> {
+  if (!supabase) return { state: 'not-configured' }
+  try {
+    const query = supabase
+      .from('wedding_settings')
+      .select('id')
+      .eq('id', 1)
+      .maybeSingle()
+    const result = await Promise.race([
+      query,
+      new Promise<never>((_resolve, reject) =>
+        setTimeout(() => reject(new Error('Connection timed out after 8 seconds.')), 8000),
+      ),
+    ])
+    if (result.error) return { state: 'failed', error: result.error.message }
+    return { state: 'connected' }
+  } catch (e) {
+    return { state: 'failed', error: e instanceof Error ? e.message : 'Connection failed.' }
+  }
+}
+
 /** Published videos only — the public site never sees unpublished videos. */
 export async function getPublishedVideos(): Promise<WeddingVideo[]> {
   if (!supabase) return []

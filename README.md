@@ -41,21 +41,30 @@ Without Supabase configured, the site still renders: the video section shows its
 
 ## Supabase setup
 
+**Full step-by-step guide: [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)** — it covers
+creating the project, copying the two values, running the SQL in order,
+creating the admin user, setting the Vercel variables, and a verification
+checklist. Short version:
+
 1. Create a project at https://supabase.com.
-2. In the SQL editor, run `supabase/migrations/001_init.sql`, then `supabase/migrations/002_videos.sql`, then `supabase/storage.sql`.
+2. In the SQL editor, run `supabase/migrations/001_init.sql`, then `002_videos.sql`, then `003_complete.sql` (idempotent — safe to re-run, and usable on its own on a fresh project), then `supabase/storage.sql`.
 3. In **Authentication → Users**, create an admin user, then in the SQL editor:
    ```sql
    insert into public.profiles (id, email, role)
    values ('<the-user-uuid>', 'you@example.com', 'admin');
    ```
+   You choose the admin password yourself in Supabase Auth — no password is in this repo.
 4. Set the environment variables (never commit a real `.env`, never use a service-role key in the browser):
    ```
    VITE_SUPABASE_URL=https://your-project.supabase.co
    VITE_SUPABASE_ANON_KEY=your-anon-key
    ```
-5. Upload wedding videos (MP4/WebM, max 25 MB) in Admin → Video Manager — or to the `videos` bucket in Supabase Storage and add rows to `wedding_videos`. Larger videos: compress to 720p first (e.g. HandBrake). Upload audio (MP3/WAV) to the `audio` bucket and point `audio_settings` at the tracks you want. Add real wedding-day events in Admin → Timeline.
+   Get them from Supabase Dashboard → Project Settings → API. In Vercel, add them under Settings → Environment Variables (Production) and **redeploy** — Vite bakes them into the build.
+5. Upload wedding videos (MP4/WebM, max 25 MB) in Admin → Video Manager — files go to the `wedding-videos` bucket, posters to `wedding-images`, audio (MP3/WAV, max 15 MB) to `wedding-audio`. Larger videos: compress to 720p first (e.g. HandBrake). Add real wedding-day events in Admin → Timeline.
 
-Row Level Security is in the migrations: anonymous visitors can read public settings, published videos, events and audio and insert an RSVP or an anonymous analytics event; only admins can read RSVPs, analytics or write settings. Guest phone numbers are never exposed publicly.
+The Admin Dashboard shows a real **Supabase: Connected / Not configured / Connection failed** status (measured with a live settings read, never assumed). Without Supabase configured, the site still renders with the honest "Supabase is not configured" setup message — it is not hidden or faked.
+
+Row Level Security is in the migrations: anonymous visitors can read public settings, published videos, events and audio and insert an RSVP or an anonymous analytics event; only admins can read RSVPs, analytics or write settings. Guest phone numbers are never exposed publicly. `SUPABASE_SETUP.md` includes a SQL snippet to prove anonymous RSVP reads are blocked.
 
 ### Admin access
 

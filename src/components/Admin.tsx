@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { supabase, supabaseConfigured } from '../lib/supabase'
+import { supabase, supabaseConfigured, testSupabaseConnection, type ConnectionStatus } from '../lib/supabase'
 import {
   AUDIO_MAX_BYTES, AUDIO_TYPES, DEFAULT_SETTINGS, DEFAULT_THEME, POSTER_MAX_BYTES,
   VIDEO_MAX_BYTES, VIDEO_TYPES, WEDDING,
@@ -84,6 +84,15 @@ export default function Admin() {
   const [confirmPass, setConfirmPass] = useState('')
   const [secError, setSecError] = useState('')
   const [secNotice, setSecNotice] = useState('')
+
+  // Real Supabase connection status — measured by testSupabaseConnection(),
+  // never assumed. 'not-configured' when no env vars are set.
+  const [connStatus, setConnStatus] = useState<ConnectionStatus>({ state: 'not-configured' })
+  const retestConnection = useCallback(() => {
+    if (!supabaseConfigured) { setConnStatus({ state: 'not-configured' }); return }
+    void testSupabaseConnection().then(setConnStatus)
+  }, [])
+  useEffect(() => { retestConnection() }, [retestConnection])
 
   const load = useCallback(async () => {
     if (!supabase) return
@@ -206,7 +215,7 @@ export default function Admin() {
   async function saveWeddingSettings(patch: Record<string, unknown>) {
     if (!supabase) return setNotice('Supabase is not configured — settings are kept locally for this preview only.')
     const { error } = await supabase.from('wedding_settings').upsert({ id: 1, ...patch, updated_at: new Date().toISOString() })
-    if (error) return setNotice(`Could not save: ${error.message} — have you run migration 002_videos.sql?`)
+    if (error) return setNotice(`Could not save: ${error.message} — have you run migrations 001, 002 and 003? See SUPABASE_SETUP.md.`)
     setDirty(false)
     setNotice('Saved and published.')
     await load()
@@ -250,9 +259,9 @@ export default function Admin() {
     if (!newVideo.title.trim()) return setVideoError('Give the video a title first.')
     setVideoBusy(true)
     const path = `videos/${Date.now()}-${videoFile.name.replace(/\s+/g, '-')}`
-    const { error: upErr } = await supabase.storage.from('videos').upload(path, videoFile, { contentType: videoFile.type })
+    const { error: upErr } = await supabase.storage.from('wedding-videos').upload(path, videoFile, { contentType: videoFile.type })
     if (upErr) { setVideoBusy(false); return setVideoError(upErr.message) }
-    const { data: pub } = supabase.storage.from('videos').getPublicUrl(path)
+    const { data: pub } = supabase.storage.from('wedding-videos').getPublicUrl(path)
     const { error } = await supabase.from('wedding_videos').insert({
       title: newVideo.title.trim(), description: newVideo.description.trim() || null,
       video_url: pub.publicUrl, storage_path: path, is_featured: videos.length === 0,
@@ -297,12 +306,12 @@ export default function Admin() {
     if (file.size > VIDEO_MAX_BYTES) return setVideoError('That file is over 25 MB — compress it to 720p first, then try again.')
     setVideoBusy(true)
     const path = `videos/${Date.now()}-${file.name.replace(/\s+/g, '-')}`
-    const { error: upErr } = await supabase.storage.from('videos').upload(path, file, { contentType: file.type })
+    const { error: upErr } = await supabase.storage.from('wedding-videos').upload(path, file, { contentType: file.type })
     if (upErr) { setVideoBusy(false); return setVideoError(upErr.message) }
-    const { data: pub } = supabase.storage.from('videos').getPublicUrl(path)
+    const { data: pub } = supabase.storage.from('wedding-videos').getPublicUrl(path)
     const oldPath = v.storage_path
     await supabase.from('wedding_videos').update({ video_url: pub.publicUrl, storage_path: path, file_size: file.size, updated_at: new Date().toISOString() }).eq('id', v.id)
-    if (oldPath) await supabase.storage.from('videos').remove([oldPath])
+    if (oldPath) await supabase.storage.from('wedding-videos').remove([oldPath])
     setVideoBusy(false)
     setNotice('Video file replaced.')
     await load()
@@ -313,20 +322,20 @@ export default function Admin() {
     if (!file.type.startsWith('image/')) return setVideoError('Poster must be an image (JPG, PNG or WebP).')
     if (file.size > POSTER_MAX_BYTES) return setVideoError('Poster must be under 5 MB.')
     const path = `posters/${Date.now()}-${file.name.replace(/\s+/g, '-')}`
-    const { error: upErr } = await supabase.storage.from('videos').upload(path, file, { contentType: file.type })
+    const { error: upErr } = await supabase.storage.from('wedding-images').upload(path, file, { contentType: file.type })
     if (upErr) return setVideoError(upErr.message)
-    const { data: pub } = supabase.storage.from('videos').getPublicUrl(path)
+    const { data: pub } = supabase.storage.from('wedding-images').getPublicUrl(path)
     const oldPoster = v.poster_path
     await supabase.from('wedding_videos').update({ poster_url: pub.publicUrl, poster_path: path }).eq('id', v.id)
-    if (oldPoster) await supabase.storage.from('videos').remove([oldPoster])
+    if (oldPoster) await supabase.storage.from('wedding-images').remove([oldPoster])
     setNotice('Poster updated.')
     await load()
   }
 
   async function deleteVideo(v: WeddingVideo) {
     if (!supabase || !window.confirm(`Delete "${v.title}"?`)) return
-    if (v.storage_path) await supabase.storage.from('videos').remove([v.storage_path])
-    if (v.poster_path) await supabase.storage.from('videos').remove([v.poster_path])
+    if (v.storage_path) await supabase.storage.from('wedding-videos').remove([v.storage_path])
+    if (v.poster_path) await supabase.storage.from('wedding-images').remove([v.poster_path])
     await supabase.from('wedding_videos').delete().eq('id', v.id)
     await load()
   }
@@ -343,9 +352,9 @@ export default function Admin() {
     if (audioFile.size > AUDIO_MAX_BYTES) return setAudioError('Audio must be under 15 MB.')
     setAudioBusy(true)
     const path = `audio/${Date.now()}-${audioFile.name.replace(/\s+/g, '-')}`
-    const { error: upErr } = await supabase.storage.from('audio').upload(path, audioFile, { contentType: audioFile.type })
+    const { error: upErr } = await supabase.storage.from('wedding-audio').upload(path, audioFile, { contentType: audioFile.type })
     if (upErr) { setAudioBusy(false); return setAudioError(upErr.message) }
-    const { data: pub } = supabase.storage.from('audio').getPublicUrl(path)
+    const { data: pub } = supabase.storage.from('wedding-audio').getPublicUrl(path)
     const { error } = await supabase.from('audio_library').insert({
       title: audioTitle.trim() || audioFile.name, file_url: pub.publicUrl,
       storage_path: path, audio_type: audioType, file_size: audioFile.size,
@@ -377,7 +386,7 @@ export default function Admin() {
 
   async function deleteTrack(t: AudioTrack) {
     if (!supabase || !window.confirm(`Delete "${t.title}"?`)) return
-    if (t.storage_path) await supabase.storage.from('audio').remove([t.storage_path])
+    if (t.storage_path) await supabase.storage.from('wedding-audio').remove([t.storage_path])
     await supabase.from('audio_library').delete().eq('id', t.id)
     await load()
   }
@@ -405,13 +414,17 @@ export default function Admin() {
       <main className="mx-auto max-w-2xl px-5 py-16">
         <h1 className="font-serif text-3xl font-semibold">Admin — setup required</h1>
         <p className="mt-3 leading-relaxed text-brown-light">
-          This standalone app needs Supabase before the admin dashboard can show real data.
-          Copy <code>.env.example</code> to <code>.env</code>, add your <code>VITE_SUPABASE_URL</code> and{' '}
-          <code>VITE_SUPABASE_ANON_KEY</code>, run the SQL in <code>supabase/migrations/001_init.sql</code>,{' '}
-          <code>supabase/migrations/002_videos.sql</code> and <code>supabase/storage.sql</code>, create an admin
-          user in Supabase Auth, and give that user the <code>admin</code> role in the <code>profiles</code> table.
-          No admin password is hardcoded anywhere.
+          This standalone app needs a real Supabase project before the admin dashboard can show real data.
+          The site is not broken — Supabase simply is not configured in this deployment yet. Follow{' '}
+          <code>SUPABASE_SETUP.md</code> at the repo root, in order:
         </p>
+        <ol className="mt-4 list-decimal space-y-2 pl-6 leading-relaxed text-brown-light">
+          <li>Create a free project at supabase.com.</li>
+          <li>In the Supabase SQL editor, run <code>supabase/migrations/001_init.sql</code>, then <code>002_videos.sql</code>, then <code>003_complete.sql</code>, then <code>supabase/storage.sql</code>.</li>
+          <li>Create the admin user in Supabase Auth (Authentication → Users), then insert that user&rsquo;s row into <code>public.profiles</code> with role <code>admin</code>.</li>
+          <li>Copy <code>.env.example</code> to <code>.env</code> and add your <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> (Supabase Dashboard → Project Settings → API). In Vercel, add the same two variables under Settings → Environment Variables and redeploy.</li>
+          <li>Come back here and sign in with the admin email and the password you chose in Supabase Auth. No admin password is hardcoded anywhere in this repo.</li>
+        </ol>
         <a href="/" className="mt-6 inline-block rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">BACK TO INVITATION</a>
       </main>
     )
@@ -478,6 +491,28 @@ export default function Admin() {
         <div className="min-w-0 flex-1">
           {tab === 'overview' && (
             <section>
+              <div className="mb-4 rounded-2xl border border-gold/40 bg-white p-5" role="status">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-medium">Supabase connection</h2>
+                    {connStatus.state === 'connected' && (
+                      <p className="mt-1 text-sm text-brown-light">Connected — the dashboard is reading live data from your Supabase project.</p>
+                    )}
+                    {connStatus.state === 'not-configured' && (
+                      <p className="mt-1 text-sm text-brown-light">Not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then redeploy. See SUPABASE_SETUP.md.</p>
+                    )}
+                    {connStatus.state === 'failed' && (
+                      <p className="mt-1 text-sm text-brown-light">Connection failed: {connStatus.error} Check the env vars and that migrations 001–003 ran.</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${connStatus.state === 'connected' ? 'bg-green-100 text-green-800' : connStatus.state === 'failed' ? 'bg-rose-100 text-rose-800' : 'bg-cream text-brown'}`}>
+                      {connStatus.state === 'connected' ? 'Connected' : connStatus.state === 'failed' ? 'Connection failed' : 'Not configured'}
+                    </span>
+                    <button onClick={retestConnection} className="rounded-full border border-gold/60 px-3 py-1 text-sm">Re-test</button>
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {[
                   ['Total visitors', visits.length, 'All visits (deduped per visitor for unique)'],
