@@ -460,18 +460,18 @@ export default function Admin() {
     return (
       <main className="mx-auto max-w-2xl px-5 py-16">
         <h1 className="font-serif text-3xl font-semibold">Admin — setup required</h1>
-        <p className="mt-3 leading-relaxed text-brown-light">
+        <p className="mt-3 leading-relaxed text-sage-dark">
           This standalone app needs a real Supabase project before the admin dashboard can show real data.
           The site is not broken — Supabase simply is not configured in this deployment yet. Follow{' '}
           <code>SUPABASE_SETUP.md</code> at the repo root, in order:
         </p>
-        <ol className="mt-4 list-decimal space-y-2 pl-6 leading-relaxed text-brown-light">
+        <ol className="mt-4 list-decimal space-y-2 pl-6 leading-relaxed text-sage-dark">
           <li>Create a free project at supabase.com.</li>
           <li>In the Supabase SQL editor, run <code>supabase/migrations/001_init.sql</code>, then <code>002_videos.sql</code>, then <code>003_complete.sql</code>, then <code>004_admin_passcode.sql</code>, then <code>supabase/storage.sql</code>.</li>
           <li>Copy <code>.env.example</code> to <code>.env</code> and add your <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> (Supabase Dashboard → Project Settings → API). In Vercel, add the same two variables under Settings → Environment Variables and redeploy.</li>
           <li>Come back here and tap the gold admin dot on the public site. The first time it opens, set your own admin passcode (at least 4 characters) — no admin passcode is hardcoded anywhere in this repo, and no email or Supabase Auth account is needed.</li>
         </ol>
-        <a href="/" className="mt-6 inline-block rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">BACK TO INVITATION</a>
+        <a href="/" className="mt-6 inline-block rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint">BACK TO INVITATION</a>
       </main>
     )
   }
@@ -480,23 +480,23 @@ export default function Admin() {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5">
         <h1 className="text-center font-serif text-3xl font-semibold">Admin Access</h1>
-        <p className="mt-2 text-center text-sm text-brown-light">
+        <p className="mt-2 text-center text-sm text-sage-dark">
           Enter your administrator passcode to continue. (The public site&rsquo;s gold admin dot opens this same passcode lock. No email, no Supabase Auth account.)
         </p>
         {authChecking ? (
-          <p className="mt-6 text-center text-sm text-brown-light">Checking your admin session…</p>
+          <p className="mt-6 text-center text-sm text-sage-dark">Checking your admin session…</p>
         ) : (
           <form onSubmit={login} className="mt-6 space-y-4 rounded-2xl border border-gold/40 bg-white p-6 shadow-sm">
             <label className="block"><span className="text-sm font-medium">Passcode</span>
-              <input type="password" value={passcode} onChange={(e) => setPasscode(e.target.value)} required autoComplete="current-password" placeholder="••••" className="mt-1 w-full rounded-lg border border-gold/50 bg-ivory px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" /></label>
+              <input type="password" value={passcode} onChange={(e) => setPasscode(e.target.value)} required autoComplete="current-password" placeholder="••••" className="mt-1 w-full rounded-lg border border-gold/50 bg-mint px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" /></label>
             {authError && <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm">{authError}</p>}
-            <button className="w-full rounded-full bg-brown py-3 text-sm tracking-widest text-ivory">UNLOCK ADMIN PANEL</button>
-            <p className="text-center text-xs leading-relaxed text-brown-light">
+            <button className="w-full rounded-full bg-emerald-dark py-3 text-sm tracking-widest text-mint">UNLOCK ADMIN PANEL</button>
+            <p className="text-center text-xs leading-relaxed text-sage-dark">
               First time here? If no passcode has been set yet, use the gold admin dot on the public site to set one. If you forgot the passcode, see the recovery steps in Admin → Security &amp; Passcode (or SUPABASE_SETUP.md) — there is no public reset.
             </p>
           </form>
         )}
-        <a href="/" className="mt-4 text-center text-sm text-brown-light underline">Back to invitation</a>
+        <a href="/" className="mt-4 text-center text-sm text-sage-dark underline">Back to invitation</a>
       </main>
     )
   }
@@ -508,21 +508,21 @@ export default function Admin() {
     ['settings', 'Website Settings'], ['security', 'Security & Passcode'],
   ]
 
-  const inputCls = 'w-full rounded-lg border border-gold/50 bg-ivory px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold'
+  const inputCls = 'w-full rounded-lg border border-gold/50 bg-mint px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold'
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-3xl font-semibold">Admin Dashboard</h1>
-          <p className="mt-1 text-sm text-brown-light">Signed in with your admin passcode · Murshida &amp; Shakir</p>
+          <p className="mt-1 text-sm text-sage-dark">Signed in with your admin passcode · Murshida &amp; Shakir</p>
         </div>
         <div className="flex gap-2">
           <a href="/" className="rounded-full border border-gold/60 px-4 py-2 text-sm">View site</a>
-          <button onClick={logout} className="rounded-full bg-brown px-4 py-2 text-sm text-ivory">Log out</button>
+          <button onClick={logout} className="rounded-full bg-emerald-dark px-4 py-2 text-sm text-mint">Log out</button>
         </div>
       </div>
-      {notice && <p className="mt-4 rounded-lg bg-cream p-3 text-sm">{notice}</p>}
+      {notice && <p className="mt-4 rounded-lg bg-sage p-3 text-sm">{notice}</p>}
 
       <div className="mt-6 flex flex-col gap-6 md:flex-row">
         <nav className="w-full shrink-0 md:w-56" aria-label="Admin sections">
@@ -531,7 +531,7 @@ export default function Admin() {
               <button
                 key={t}
                 onClick={() => { setTab(t); setNotice('') }}
-                className={`whitespace-nowrap rounded-full px-4 py-2.5 text-left text-sm md:rounded-xl ${tab === t ? 'bg-brown text-ivory' : 'border border-gold/50 bg-white hover:border-gold'}`}
+                className={`whitespace-nowrap rounded-full px-4 py-2.5 text-left text-sm md:rounded-xl ${tab === t ? 'bg-emerald-dark text-mint' : 'border border-gold/50 bg-white hover:border-gold'}`}
               >
                 {label}
               </button>
@@ -547,17 +547,17 @@ export default function Admin() {
                   <div>
                     <h2 className="font-medium">Supabase connection</h2>
                     {connStatus.state === 'connected' && (
-                      <p className="mt-1 text-sm text-brown-light">Connected — the dashboard is reading live data from your Supabase project.</p>
+                      <p className="mt-1 text-sm text-sage-dark">Connected — the dashboard is reading live data from your Supabase project.</p>
                     )}
                     {connStatus.state === 'not-configured' && (
-                      <p className="mt-1 text-sm text-brown-light">Not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then redeploy. See SUPABASE_SETUP.md.</p>
+                      <p className="mt-1 text-sm text-sage-dark">Not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then redeploy. See SUPABASE_SETUP.md.</p>
                     )}
                     {connStatus.state === 'failed' && (
-                      <p className="mt-1 text-sm text-brown-light">Connection failed: {connStatus.error} Check the env vars and that migrations 001–004 ran.</p>
+                      <p className="mt-1 text-sm text-sage-dark">Connection failed: {connStatus.error} Check the env vars and that migrations 001–004 ran.</p>
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${connStatus.state === 'connected' ? 'bg-green-100 text-green-800' : connStatus.state === 'failed' ? 'bg-rose-100 text-rose-800' : 'bg-cream text-brown'}`}>
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${connStatus.state === 'connected' ? 'bg-green-100 text-green-800' : connStatus.state === 'failed' ? 'bg-rose-100 text-rose-800' : 'bg-sage text-emerald-dark'}`}>
                       {connStatus.state === 'connected' ? 'Connected' : connStatus.state === 'failed' ? 'Connection failed' : 'Not configured'}
                     </span>
                     <button onClick={retestConnection} className="rounded-full border border-gold/60 px-3 py-1 text-sm">Re-test</button>
@@ -578,28 +578,28 @@ export default function Admin() {
                   <div key={label as string} className="rounded-2xl border border-gold/40 bg-white p-5">
                     <p className="text-xs tracking-widest text-gold-dark">{(label as string).toUpperCase()}</p>
                     <p className="mt-1 font-serif text-4xl">{value as number}</p>
-                    <p className="mt-1 text-xs text-brown-light">{note as string}</p>
+                    <p className="mt-1 text-xs text-sage-dark">{note as string}</p>
                   </div>
                 ))}
               </div>
               {rsvps.length > 0 && (
                 <div className="mt-6 rounded-2xl border border-gold/40 bg-white p-5">
                   <h2 className="font-medium">Attendance</h2>
-                  <div className="mt-3 h-4 overflow-hidden rounded-full bg-cream">
+                  <div className="mt-3 h-4 overflow-hidden rounded-full bg-sage">
                     <div className="h-full bg-gold" style={{ width: `${(attending.length / rsvps.length) * 100}%` }} />
                   </div>
-                  <p className="mt-2 text-sm text-brown-light">{attending.length} of {rsvps.length} attending ({Math.round((attending.length / rsvps.length) * 100)}%) · {totalGuests} expected guests</p>
+                  <p className="mt-2 text-sm text-sage-dark">{attending.length} of {rsvps.length} attending ({Math.round((attending.length / rsvps.length) * 100)}%) · {totalGuests} expected guests</p>
                   <h3 className="mt-5 font-medium">Latest RSVPs</h3>
                   <ul className="mt-2 space-y-1 text-sm">
                     {rsvps.slice(0, 5).map((r) => <li key={r.id}>{r.guest_name} — {r.attendance_status === 'attending' ? 'Attending' : 'Not attending'} ({r.guest_count})</li>)}
                   </ul>
                 </div>
               )}
-              {rsvps.length === 0 && <p className="mt-6 rounded-2xl border border-dashed border-gold/60 bg-white/70 p-6 text-center text-sm text-brown-light">No RSVPs yet — stats show a true zero, not sample data.</p>}
+              {rsvps.length === 0 && <p className="mt-6 rounded-2xl border border-dashed border-gold/60 bg-white/70 p-6 text-center text-sm text-sage-dark">No RSVPs yet — stats show a true zero, not sample data.</p>}
               <div className="mt-6 rounded-2xl border border-gold/40 bg-white p-5">
                 <h2 className="font-medium">Latest activity</h2>
                 {analytics.length === 0 ? (
-                  <p className="mt-2 text-sm text-brown-light">No visits recorded yet.</p>
+                  <p className="mt-2 text-sm text-sage-dark">No visits recorded yet.</p>
                 ) : (
                   <ul className="mt-2 space-y-1 text-sm">
                     {analytics.slice(0, 8).map((a, i) => (
@@ -619,7 +619,7 @@ export default function Admin() {
           {tab === 'invitation' && (
             <section className="rounded-2xl border border-gold/40 bg-white p-6">
               <h2 className="font-serif text-2xl">Invitation Editor</h2>
-              <p className="mt-1 text-sm text-brown-light">Saved to <code>wedding_settings</code>. Changes show on the public site after saving.</p>
+              <p className="mt-1 text-sm text-sage-dark">Saved to <code>wedding_settings</code>. Changes show on the public site after saving.</p>
               <div className="mt-4 space-y-3">
                 {([
                   ['bride_name', 'Bride name'], ['groom_name', 'Groom name'],
@@ -639,10 +639,10 @@ export default function Admin() {
               </div>
               {dirty && <p className="mt-3 text-sm text-gold-dark">You have unsaved changes.</p>}
               <div className="mt-4 flex gap-2">
-                <button onClick={() => void saveWeddingSettings({ ...invitation, hero_message: undefined })} className="rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">SAVE &amp; PUBLISH</button>
+                <button onClick={() => void saveWeddingSettings({ ...invitation, hero_message: undefined })} className="rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint">SAVE &amp; PUBLISH</button>
                 <a href="/" target="_blank" rel="noreferrer" className="rounded-full border border-gold/60 px-6 py-3 text-sm">PREVIEW SITE</a>
               </div>
-              <p className="mt-3 text-xs text-brown-light">The hero message is edited in <code>src/lib/config.ts</code> in this standalone repo; the other fields above are stored in the database.</p>
+              <p className="mt-3 text-xs text-sage-dark">The hero message is edited in <code>src/lib/config.ts</code> in this standalone repo; the other fields above are stored in the database.</p>
             </section>
           )}
 
@@ -664,7 +664,7 @@ export default function Admin() {
                 </label>
               </div>
               {dirty && <p className="mt-3 text-sm text-gold-dark">You have unsaved changes.</p>}
-              <button onClick={() => void saveWeddingSettings({ wedding_date: `${details.wedding_date}T00:00:00+05:30`, venue_name: details.venue_name, venue_address: details.venue_address || null, maps_url: details.maps_url || null })} className="mt-4 rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">SAVE DETAILS</button>
+              <button onClick={() => void saveWeddingSettings({ wedding_date: `${details.wedding_date}T00:00:00+05:30`, venue_name: details.venue_name, venue_address: details.venue_address || null, maps_url: details.maps_url || null })} className="mt-4 rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint">SAVE DETAILS</button>
             </section>
           )}
 
@@ -689,19 +689,19 @@ export default function Admin() {
                     </label>
                   </div>
                   {audioError && <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm">{audioError}</p>}
-                  <button disabled={audioBusy} className="rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory disabled:opacity-70">
+                  <button disabled={audioBusy} className="rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint disabled:opacity-70">
                     {audioBusy ? 'UPLOADING…' : 'UPLOAD AUDIO (MP3 / WAV, MAX 15 MB)'}
                   </button>
                 </form>
               </div>
               <div className="mt-4 rounded-2xl border border-gold/40 bg-white p-6">
                 <h3 className="font-medium">Audio library ({tracks.length})</h3>
-                {tracks.length === 0 && <p className="mt-2 text-sm text-brown-light">No audio uploaded yet.</p>}
+                {tracks.length === 0 && <p className="mt-2 text-sm text-sage-dark">No audio uploaded yet.</p>}
                 <ul className="mt-3 space-y-4">
                   {tracks.map((t) => (
-                    <li key={t.id} className="rounded-xl border border-cream p-4">
+                    <li key={t.id} className="rounded-xl border border-sage p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-sm font-medium">{t.title} <span className="text-xs text-brown-light">· {t.audio_type} · {fmtBytes(t.file_size)} · {new Date(t.created_at).toLocaleDateString()}</span></span>
+                        <span className="text-sm font-medium">{t.title} <span className="text-xs text-sage-dark">· {t.audio_type} · {fmtBytes(t.file_size)} · {new Date(t.created_at).toLocaleDateString()}</span></span>
                         <button onClick={() => deleteTrack(t)} className="text-sm text-rose underline">Delete</button>
                       </div>
                       <audio controls preload="none" src={t.file_url} className="mt-2 w-full" />
@@ -729,15 +729,15 @@ export default function Admin() {
                   ] as const).map(([key, label]) => (
                     <label key={key} className="flex items-center justify-between gap-4">
                       <span>{label}</span>
-                      <input type="checkbox" checked={audioSettings[key]} onChange={(e) => setAudioSettings({ ...audioSettings, [key]: e.target.checked })} className="h-5 w-5 accent-[#D6B56D]" />
+                      <input type="checkbox" checked={audioSettings[key]} onChange={(e) => setAudioSettings({ ...audioSettings, [key]: e.target.checked })} className="h-5 w-5 accent-[#0F5132]" />
                     </label>
                   ))}
                   <label className="block">Volume ({Math.round(audioSettings.volume * 100)}%)
-                    <input type="range" min={0} max={1} step={0.05} value={audioSettings.volume} onChange={(e) => setAudioSettings({ ...audioSettings, volume: Number(e.target.value) })} className="mt-1 w-full accent-[#D6B56D]" />
+                    <input type="range" min={0} max={1} step={0.05} value={audioSettings.volume} onChange={(e) => setAudioSettings({ ...audioSettings, volume: Number(e.target.value) })} className="mt-1 w-full accent-[#0F5132]" />
                   </label>
                 </div>
-                <button onClick={saveAudioSettings} className="mt-4 rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">PUBLISH AUDIO SETTINGS</button>
-                <p className="mt-2 text-xs text-brown-light">Only one background track plays at a time (single audio instance in the floating player).</p>
+                <button onClick={saveAudioSettings} className="mt-4 rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint">PUBLISH AUDIO SETTINGS</button>
+                <p className="mt-2 text-xs text-sage-dark">Only one background track plays at a time (single audio instance in the floating player).</p>
               </div>
             </section>
           )}
@@ -746,10 +746,10 @@ export default function Admin() {
             <section>
               <div className="rounded-2xl border border-gold/40 bg-white p-6">
                 <h2 className="font-serif text-2xl">Video Manager</h2>
-                <p className="mt-1 text-sm text-brown-light">MP4 / WebM only, max 25 MB per file. Larger videos: compress to 720p first (e.g. HandBrake) — the upload will not silently fail, it will tell you the file is too large.</p>
+                <p className="mt-1 text-sm text-sage-dark">MP4 / WebM only, max 25 MB per file. Larger videos: compress to 720p first (e.g. HandBrake) — the upload will not silently fail, it will tell you the file is too large.</p>
                 <form onSubmit={uploadVideo} className="mt-4 space-y-3">
                   <input type="file" accept="video/mp4,video/webm" onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)} className={inputCls} aria-label="Choose a video file" />
-                  {videoFile && <p className="text-sm text-brown-light">Selected: {videoFile.name} · {fmtBytes(videoFile.size)}</p>}
+                  {videoFile && <p className="text-sm text-sage-dark">Selected: {videoFile.name} · {fmtBytes(videoFile.size)}</p>}
                   <label className="block text-sm font-medium">Title *
                     <input value={newVideo.title} onChange={(e) => setNewVideo({ ...newVideo, title: e.target.value })} required placeholder="e.g. Our Wedding Film" className={inputCls} />
                   </label>
@@ -757,7 +757,7 @@ export default function Admin() {
                     <textarea value={newVideo.description} rows={2} onChange={(e) => setNewVideo({ ...newVideo, description: e.target.value })} className={inputCls} />
                   </label>
                   {videoError && <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm">{videoError}</p>}
-                  <button disabled={videoBusy} className="rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory disabled:opacity-70">
+                  <button disabled={videoBusy} className="rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint disabled:opacity-70">
                     {videoBusy ? 'UPLOADING…' : 'UPLOAD VIDEO'}
                   </button>
                 </form>
@@ -773,24 +773,24 @@ export default function Admin() {
                 />
               </div>
               <div className="mt-4 space-y-4">
-                {videos.length === 0 && <p className="rounded-2xl border border-dashed border-gold/60 bg-white/70 p-6 text-center text-sm text-brown-light">No videos yet — the public video section shows an elegant empty state until you upload and publish one.</p>}
+                {videos.length === 0 && <p className="rounded-2xl border border-dashed border-gold/60 bg-white/70 p-6 text-center text-sm text-sage-dark">No videos yet — the public video section shows an elegant empty state until you upload and publish one.</p>}
                 {[...videos].sort((a, b) => a.video_order - b.video_order).map((v) => (
                   <article key={v.id} className="rounded-2xl border border-gold/40 bg-white p-5">
-                    <video src={v.video_url} poster={v.poster_url ?? undefined} controls preload="metadata" className="aspect-video w-full rounded-xl bg-brown object-cover" />
+                    <video src={v.video_url} poster={v.poster_url ?? undefined} controls preload="metadata" className="aspect-video w-full rounded-xl bg-emerald-dark object-cover" />
                     {editingVideo?.id === v.id ? (
                       <div className="mt-3 space-y-2">
                         <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className={inputCls} aria-label="Video title" />
                         <textarea value={editDesc} rows={2} onChange={(e) => setEditDesc(e.target.value)} className={inputCls} aria-label="Video description" />
                         <div className="flex gap-2">
-                          <button onClick={() => { void updateVideo(v.id, { title: editTitle.trim() || v.title, description: editDesc.trim() || null }); setEditingVideo(null) }} className="rounded-full bg-brown px-4 py-2 text-sm text-ivory">Save</button>
+                          <button onClick={() => { void updateVideo(v.id, { title: editTitle.trim() || v.title, description: editDesc.trim() || null }); setEditingVideo(null) }} className="rounded-full bg-emerald-dark px-4 py-2 text-sm text-mint">Save</button>
                           <button onClick={() => setEditingVideo(null)} className="rounded-full border border-gold/60 px-4 py-2 text-sm">Cancel</button>
                         </div>
                       </div>
                     ) : (
                       <>
                         <h3 className="mt-3 font-serif text-xl">{v.title}</h3>
-                        {v.description && <p className="mt-1 text-sm text-brown-light">{v.description}</p>}
-                        <p className="mt-1 text-xs text-brown-light">
+                        {v.description && <p className="mt-1 text-sm text-sage-dark">{v.description}</p>}
+                        <p className="mt-1 text-xs text-sage-dark">
                           {fmtBytes(v.file_size)} · {v.is_published ? 'Published' : 'Unpublished (hidden from guests)'} · {v.is_featured ? 'Featured' : 'Not featured'}
                         </p>
                       </>
@@ -835,15 +835,15 @@ export default function Admin() {
                 <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} aria-label="Sort RSVPs" className="rounded-lg border border-gold/50 bg-white px-3 py-2.5">
                   <option value="newest">Newest</option><option value="oldest">Oldest</option>
                 </select>
-                <button onClick={exportCsv} className="rounded-full bg-brown px-4 py-2 text-sm text-ivory">Export CSV</button>
+                <button onClick={exportCsv} className="rounded-full bg-emerald-dark px-4 py-2 text-sm text-mint">Export CSV</button>
               </div>
-              <p className="mt-3 text-xs text-brown-light">Guest phone numbers are visible only to signed-in admins — never on the public site.</p>
+              <p className="mt-3 text-xs text-sage-dark">Guest phone numbers are visible only to signed-in admins — never on the public site.</p>
               <div className="mt-4 overflow-x-auto rounded-2xl border border-gold/40 bg-white">
                 <table className="w-full min-w-[720px] text-left text-sm">
                   <thead><tr className="border-b border-gold/30"><th className="p-3">Guest</th><th className="p-3">Phone</th><th className="p-3">Guests</th><th className="p-3">Status</th><th className="p-3">Message</th><th className="p-3">Date</th><th className="p-3" /></tr></thead>
                   <tbody>
                     {pageRows.map((r) => (
-                      <tr key={r.id} className="border-b border-cream">
+                      <tr key={r.id} className="border-b border-sage">
                         <td className="p-3">{r.guest_name}</td><td className="p-3">{r.phone_number}</td><td className="p-3">{r.guest_count}</td>
                         <td className="p-3">{r.attendance_status}</td><td className="p-3">{r.message ?? '—'}</td>
                         <td className="p-3">{new Date(r.created_at).toLocaleDateString()}</td>
@@ -852,7 +852,7 @@ export default function Admin() {
                     ))}
                   </tbody>
                 </table>
-                {pageRows.length === 0 && <p className="p-6 text-center text-sm text-brown-light">No RSVPs match.</p>}
+                {pageRows.length === 0 && <p className="p-6 text-center text-sm text-sage-dark">No RSVPs match.</p>}
               </div>
               <div className="mt-3 flex items-center gap-3 text-sm">
                 <button disabled={page === 0} onClick={() => setPage((p) => p - 1)} className="rounded-full border border-gold/50 px-3 py-1.5 disabled:opacity-50">Previous</button>
@@ -869,7 +869,7 @@ export default function Admin() {
                 <input value={newEvent.event_time} onChange={(e) => setNewEvent({ ...newEvent, event_time: e.target.value })} required placeholder="Time, e.g. 11:00 AM *" className={inputCls} />
                 <input value={newEvent.description} onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })} placeholder="Description" className={inputCls} />
                 <input value={newEvent.location} onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })} placeholder="Location" className={inputCls} />
-                <button className="rounded-full bg-brown py-2.5 text-sm text-ivory sm:col-span-2">ADD EVENT</button>
+                <button className="rounded-full bg-emerald-dark py-2.5 text-sm text-mint sm:col-span-2">ADD EVENT</button>
               </form>
               <ul className="mt-4 space-y-2">
                 {events.map((e) => (
@@ -878,7 +878,7 @@ export default function Admin() {
                     <button onClick={() => deleteEvent(e.id)} className="text-rose underline">Delete</button>
                   </li>
                 ))}
-                {events.length === 0 && <li className="rounded-xl border border-dashed border-gold/60 bg-white/70 p-4 text-center text-sm text-brown-light">No events yet — the public timeline honestly says timings are being finalised.</li>}
+                {events.length === 0 && <li className="rounded-xl border border-dashed border-gold/60 bg-white/70 p-4 text-center text-sm text-sage-dark">No events yet — the public timeline honestly says timings are being finalised.</li>}
               </ul>
             </section>
           )}
@@ -886,23 +886,23 @@ export default function Admin() {
           {tab === 'countdown' && (
             <section className="rounded-2xl border border-gold/40 bg-white p-6">
               <h2 className="font-serif text-2xl">Countdown Settings</h2>
-              <p className="mt-2 text-sm text-brown-light">
+              <p className="mt-2 text-sm text-sage-dark">
                 The countdown targets <strong>{details.wedding_date}</strong> at the start of the day in Asia/Kolkata
                 (set in Wedding Details). It ticks every second and shows a graceful message once the day has passed.
               </p>
               <label className="mt-4 flex items-center justify-between gap-4 text-sm">
                 <span className="font-medium">Show countdown on the public site</span>
-                <input type="checkbox" checked={settings.countdown_visible} onChange={(e) => { setSettings({ ...settings, countdown_visible: e.target.checked }); setDirty(true) }} className="h-5 w-5 accent-[#D6B56D]" />
+                <input type="checkbox" checked={settings.countdown_visible} onChange={(e) => { setSettings({ ...settings, countdown_visible: e.target.checked }); setDirty(true) }} className="h-5 w-5 accent-[#0F5132]" />
               </label>
               {dirty && <p className="mt-3 text-sm text-gold-dark">You have unsaved changes.</p>}
-              <button onClick={() => void saveWeddingSettings({ countdown_visible: settings.countdown_visible })} className="mt-4 rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">SAVE COUNTDOWN SETTINGS</button>
+              <button onClick={() => void saveWeddingSettings({ countdown_visible: settings.countdown_visible })} className="mt-4 rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint">SAVE COUNTDOWN SETTINGS</button>
             </section>
           )}
 
           {tab === 'theme' && (
             <section className="rounded-2xl border border-gold/40 bg-white p-6">
               <h2 className="font-serif text-2xl">Theme &amp; Design</h2>
-              <p className="mt-1 text-sm text-brown-light">Saved to <code>wedding_settings.theme</code> (migration 002). The public site applies these on load.</p>
+              <p className="mt-1 text-sm text-sage-dark">Saved to <code>wedding_settings.theme</code> (migration 002). The public site applies these on load.</p>
               <div className="mt-4 space-y-4">
                 <label className="flex items-center justify-between gap-4 text-sm font-medium">Background colour
                   <input type="color" value={theme.backgroundColor} onChange={(e) => { setTheme({ ...theme, backgroundColor: e.target.value }); setDirty(true) }} />
@@ -917,11 +917,11 @@ export default function Admin() {
                   </select>
                 </label>
                 <label className="flex items-center justify-between gap-4 text-sm font-medium">Animations enabled
-                  <input type="checkbox" checked={theme.animationsEnabled} onChange={(e) => { setTheme({ ...theme, animationsEnabled: e.target.checked }); setDirty(true) }} className="h-5 w-5 accent-[#D6B56D]" />
+                  <input type="checkbox" checked={theme.animationsEnabled} onChange={(e) => { setTheme({ ...theme, animationsEnabled: e.target.checked }); setDirty(true) }} className="h-5 w-5 accent-[#0F5132]" />
                 </label>
               </div>
               {dirty && <p className="mt-3 text-sm text-gold-dark">You have unsaved changes.</p>}
-              <button onClick={() => void saveWeddingSettings({ theme, animations_enabled: theme.animationsEnabled })} className="mt-4 rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">SAVE THEME</button>
+              <button onClick={() => void saveWeddingSettings({ theme, animations_enabled: theme.animationsEnabled })} className="mt-4 rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint">SAVE THEME</button>
             </section>
           )}
 
@@ -933,13 +933,13 @@ export default function Admin() {
                 ['rsvp_visible', 'RSVP visible'], ['music_enabled', 'Background music enabled'],
                 ['music_loop', 'Music loop'], ['published', 'Website published'],
               ] as const).map(([key, label]) => (
-                <label key={key} className="mt-4 flex items-center justify-between gap-4 border-b border-cream pb-3 text-sm">
+                <label key={key} className="mt-4 flex items-center justify-between gap-4 border-b border-sage pb-3 text-sm">
                   <span className="font-medium">{label}</span>
-                  <input type="checkbox" checked={settings[key]} onChange={(e) => { setSettings({ ...settings, [key]: e.target.checked }); setDirty(true) }} className="h-5 w-5 accent-[#D6B56D]" />
+                  <input type="checkbox" checked={settings[key]} onChange={(e) => { setSettings({ ...settings, [key]: e.target.checked }); setDirty(true) }} className="h-5 w-5 accent-[#0F5132]" />
                 </label>
               ))}
               <label className="mt-4 block text-sm font-medium">Music volume ({Math.round(settings.music_volume * 100)}%)
-                <input type="range" min={0} max={1} step={0.05} value={settings.music_volume} onChange={(e) => { setSettings({ ...settings, music_volume: Number(e.target.value) }); setDirty(true) }} className="mt-2 w-full accent-[#D6B56D]" />
+                <input type="range" min={0} max={1} step={0.05} value={settings.music_volume} onChange={(e) => { setSettings({ ...settings, music_volume: Number(e.target.value) }); setDirty(true) }} className="mt-2 w-full accent-[#0F5132]" />
               </label>
               {dirty && <p className="mt-3 text-sm text-gold-dark">You have unsaved changes.</p>}
               <button
@@ -949,7 +949,7 @@ export default function Admin() {
                   music_enabled: settings.music_enabled, loop_enabled: settings.music_loop,
                   music_volume: settings.music_volume,
                 })}
-                className="mt-5 rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory"
+                className="mt-5 rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint"
               >
                 SAVE &amp; PUBLISH SETTINGS
               </button>
@@ -959,14 +959,14 @@ export default function Admin() {
           {tab === 'security' && (
             <section className="rounded-2xl border border-gold/40 bg-white p-6">
               <h2 className="font-serif text-2xl">Security &amp; Passcode</h2>
-              <p className="mt-2 text-sm leading-relaxed text-brown-light">
+              <p className="mt-2 text-sm leading-relaxed text-sage-dark">
                 Signed in with your admin passcode. The passcode is stored server-side only as a
                 bcrypt hash (migration 004) — it is never displayed here, never stored in the code,
                 and never readable through the API. Changing it requires your current passcode first,
                 and changing it signs out every other admin session. Five wrong attempts lock
                 verification for 5 minutes.
               </p>
-              <p className="mt-3 text-sm text-brown-light">
+              <p className="mt-3 text-sm text-sage-dark">
                 Last passcode change: <strong>{lastPassChange ? new Date(lastPassChange).toLocaleString() : 'Unknown'}</strong>{' '}
                 (from the server).
               </p>
@@ -981,18 +981,18 @@ export default function Admin() {
                   <input type="password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} required autoComplete="new-password" className={inputCls} />
                 </label>
                 {secError && <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm">{secError}</p>}
-                {secNotice && <p className="rounded-lg bg-cream p-3 text-sm">{secNotice}</p>}
-                <button className="rounded-full bg-brown px-6 py-3 text-sm tracking-widest text-ivory">CHANGE PASSCODE</button>
+                {secNotice && <p className="rounded-lg bg-sage p-3 text-sm">{secNotice}</p>}
+                <button className="rounded-full bg-emerald-dark px-6 py-3 text-sm tracking-widest text-mint">CHANGE PASSCODE</button>
               </form>
-              <div className="mt-6 rounded-xl border border-gold/40 bg-cream p-4">
+              <div className="mt-6 rounded-xl border border-gold/40 bg-sage p-4">
                 <h3 className="font-medium">Forgot your passcode?</h3>
-                <p className="mt-1 text-sm leading-relaxed text-brown-light">
+                <p className="mt-1 text-sm leading-relaxed text-sage-dark">
                   There is no public reset — anyone could use it. Only you, in the Supabase dashboard,
                   can reset it. Run this in the Supabase SQL Editor, then open the gold admin dot on
                   the public site and set a new passcode when it asks:
                 </p>
                 <pre className="mt-2 overflow-x-auto rounded-lg bg-white p-3 text-xs">delete from public.admin_credentials where id = 1;</pre>
-                <p className="mt-2 text-xs text-brown-light">
+                <p className="mt-2 text-xs text-sage-dark">
                   That deletes only the stored hash (and lets the setup form appear again). It does not
                   delete any RSVPs, videos, audio or settings. Full steps: SUPABASE_SETUP.md.
                 </p>

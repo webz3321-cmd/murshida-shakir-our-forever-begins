@@ -71,10 +71,10 @@ export default function App() {
 
   if (!settings.published) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-ivory px-5 text-center">
+      <main className="flex min-h-dvh items-center justify-center bg-mint px-5 text-center">
         <div>
           <p className="font-script text-4xl text-gold-dark">Murshida &amp; Shakir</p>
-          <p className="mt-3 text-brown-light">This invitation is currently unpublished. Please check back soon.</p>
+          <p className="mt-3 text-sage-dark">This invitation is currently unpublished. Please check back soon.</p>
         </div>
         <AdminDot />
       </main>
@@ -84,7 +84,7 @@ export default function App() {
   const anim = settings.animations_enabled
 
   return (
-    <div className="min-h-dvh bg-ivory" style={{ backgroundColor: settings.theme.backgroundColor }}>
+    <div className="min-h-dvh bg-mint" style={{ backgroundColor: settings.theme.backgroundColor }}>
       <Hero animationsEnabled={anim} />
       <Reveal enabled={anim}><Details /></Reveal>
       {settings.countdown_visible && <Reveal enabled={anim}><Countdown /></Reveal>}
@@ -95,8 +95,8 @@ export default function App() {
       {settings.rsvp_visible && <Reveal enabled={anim}><RsvpForm /></Reveal>}
       <footer className="px-5 py-12 text-center">
         <p className="font-script text-4xl text-gold-dark">Murshida &amp; Shakir</p>
-        <p className="mt-2 text-sm text-brown-light">Sunday, 27 December 2026 · Janapriya Garden Hall, Mani</p>
-        <p className="mt-1 text-xs text-brown-light">Made with love · 27 | 12 | 2026</p>
+        <p className="mt-2 text-sm text-sage-dark">Sunday, 27 December 2026 · Janapriya Garden Hall, Mani</p>
+        <p className="mt-1 text-xs text-sage-dark">Made with love · 27 | 12 | 2026</p>
       </footer>
       <FloatingMusicPlayer
         trackUrl={trackUrl}

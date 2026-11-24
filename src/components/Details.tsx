@@ -10,7 +10,7 @@ const items = [
 
 export default function Details() {
   return (
-    <section id="details" className="bg-cream/60 px-5 py-16">
+    <section id="details" className="bg-sage/60 px-5 py-16">
       <div className="mx-auto max-w-4xl text-center">
         <p className="font-script text-4xl text-gold-dark">Our Special Day</p>
         <h2 className="mt-2 font-serif text-3xl font-semibold sm:text-4xl">Wedding Details</h2>
@@ -24,7 +24,7 @@ export default function Details() {
             </article>
           ))}
         </div>
-        <p className="mt-8 flex items-center justify-center gap-2 text-sm text-brown-light">
+        <p className="mt-8 flex items-center justify-center gap-2 text-sm text-sage-dark">
           <Users size={16} aria-hidden /> {WEDDING.invitationMessage}
         </p>
       </div>

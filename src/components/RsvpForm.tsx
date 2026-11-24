@@ -68,44 +68,44 @@ export default function RsvpForm() {
       <section id="rsvp" className="px-5 py-16 text-center">
         <CheckCircle2 className="mx-auto text-gold" size={48} aria-hidden />
         <h2 className="mt-4 font-serif text-3xl font-semibold">Thank you!</h2>
-        <p className="mx-auto mt-2 max-w-md text-brown-light">
+        <p className="mx-auto mt-2 max-w-md text-sage-dark">
           Your response has been saved. We can&rsquo;t wait to celebrate with you on 27 December 2026.
         </p>
         {!supabaseConfigured && (
-          <p className="mt-3 text-xs text-brown-light">Demo mode: Supabase is not configured, so this was saved locally only.</p>
+          <p className="mt-3 text-xs text-sage-dark">Demo mode: Supabase is not configured, so this was saved locally only.</p>
         )}
       </section>
     )
   }
 
   return (
-    <section id="rsvp" className="bg-cream/60 px-5 py-16">
+    <section id="rsvp" className="bg-sage/60 px-5 py-16">
       <div className="mx-auto max-w-xl">
         <h2 className="text-center font-serif text-3xl font-semibold sm:text-4xl">RSVP</h2>
-        <p className="mt-2 text-center text-sm text-brown-light">Please let us know if you can join us.</p>
+        <p className="mt-2 text-center text-sm text-sage-dark">Please let us know if you can join us.</p>
         {!supabaseConfigured && (
-          <p className="mt-4 rounded-lg border border-gold/50 bg-white/80 p-3 text-center text-xs text-brown-light">
+          <p className="mt-4 rounded-lg border border-gold/50 bg-white/80 p-3 text-center text-xs text-sage-dark">
             Demo mode — connect Supabase (see README) to save RSVPs to the shared database.
           </p>
         )}
         <form onSubmit={submit} className="mt-8 space-y-4 rounded-2xl border border-gold/40 bg-white/90 p-6 shadow-sm">
           <label className="block text-left">
             <span className="text-sm font-medium">Guest name *</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} className="mt-1 w-full rounded-lg border border-gold/50 bg-ivory px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="Your full name" />
+            <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} className="mt-1 w-full rounded-lg border border-gold/50 bg-mint px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="Your full name" />
           </label>
           <label className="block text-left">
             <span className="text-sm font-medium">Phone number *</span>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} required inputMode="tel" className="mt-1 w-full rounded-lg border border-gold/50 bg-ivory px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="+91 98765 43210" />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} required inputMode="tel" className="mt-1 w-full rounded-lg border border-gold/50 bg-mint px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="+91 98765 43210" />
           </label>
           <label className="block text-left">
             <span className="text-sm font-medium">Number of guests (1–10) *</span>
-            <input type="number" value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))} required min={1} max={10} className="mt-1 w-full rounded-lg border border-gold/50 bg-ivory px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" />
+            <input type="number" value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))} required min={1} max={10} className="mt-1 w-full rounded-lg border border-gold/50 bg-mint px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" />
           </label>
           <fieldset>
             <legend className="text-sm font-medium">Will you be attending? *</legend>
             <div className="mt-2 grid grid-cols-2 gap-3">
               {(['attending', 'not_attending'] as const).map((v) => (
-                <label key={v} className={`cursor-pointer rounded-lg border px-3 py-2.5 text-center text-sm ${status === v ? 'border-gold bg-cream font-medium' : 'border-gold/40'}`}>
+                <label key={v} className={`cursor-pointer rounded-lg border px-3 py-2.5 text-center text-sm ${status === v ? 'border-gold bg-sage font-medium' : 'border-gold/40'}`}>
                   <input type="radio" name="attendance" value={v} checked={status === v} onChange={() => setStatus(v)} className="sr-only" />
                   {v === 'attending' ? 'Attending' : 'Not attending'}
                 </label>
@@ -114,13 +114,13 @@ export default function RsvpForm() {
           </fieldset>
           <label className="block text-left">
             <span className="text-sm font-medium">Personal message (optional)</span>
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} maxLength={500} className="mt-1 w-full rounded-lg border border-gold/50 bg-ivory px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="A few kind words…" />
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} maxLength={500} className="mt-1 w-full rounded-lg border border-gold/50 bg-mint px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="A few kind words…" />
           </label>
-          {error && <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm text-brown">{error}</p>}
-          <button type="submit" disabled={loading} className="w-full rounded-full bg-brown px-8 py-3.5 text-sm font-medium tracking-[0.2em] text-ivory shadow-lg transition hover:bg-gold-dark focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:opacity-70">
+          {error && <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm text-emerald-dark">{error}</p>}
+          <button type="submit" disabled={loading} className="w-full rounded-full bg-emerald-dark px-8 py-3.5 text-sm font-medium tracking-[0.2em] text-mint shadow-lg transition hover:bg-gold-dark focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:opacity-70">
             {loading ? 'SAVING…' : 'CONFIRM MY PRESENCE'}
           </button>
-          <p className="text-center text-xs text-brown-light">
+          <p className="text-center text-xs text-sage-dark">
             Submitting again with the same phone number updates your existing response instead of creating a duplicate.
           </p>
         </form>

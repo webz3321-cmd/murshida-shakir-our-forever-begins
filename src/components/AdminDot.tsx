@@ -145,21 +145,21 @@ export default function AdminDot() {
           role="dialog"
           aria-modal="true"
           aria-label="Admin access"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-brown/70 p-5"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-dark/70 p-5"
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-sm rounded-3xl border border-gold/50 bg-ivory p-7 text-center shadow-2xl"
+            className="w-full max-w-sm rounded-3xl border border-gold/50 bg-mint p-7 text-center shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <p className="font-script text-3xl text-gold-dark">Admin Access</p>
             {mode === 'setup' ? (
-              <p className="mt-2 text-sm text-brown-light">No admin passcode is set yet. Choose one now — only you will know it.</p>
+              <p className="mt-2 text-sm text-sage-dark">No admin passcode is set yet. Choose one now — only you will know it.</p>
             ) : (
-              <p className="mt-2 text-sm text-brown-light">Enter your administrator passcode to continue.</p>
+              <p className="mt-2 text-sm text-sage-dark">Enter your administrator passcode to continue.</p>
             )}
             {mode === 'checking' ? (
-              <p className="mt-6 text-sm text-brown-light">Checking…</p>
+              <p className="mt-6 text-sm text-sage-dark">Checking…</p>
             ) : mode === 'locked' ? (
               <div className="mt-5">
                 <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm">{lockedText}</p>
@@ -173,7 +173,7 @@ export default function AdminDot() {
             ) : (
               <form onSubmit={submit} className="mt-5 space-y-3 text-left">
                 <label className="block">
-                  <span className="text-xs font-medium tracking-widest text-brown-light">
+                  <span className="text-xs font-medium tracking-widest text-sage-dark">
                     {mode === 'setup' ? 'SET YOUR ADMIN PASSCODE' : 'PASSCODE'}
                   </span>
                   <input
@@ -189,7 +189,7 @@ export default function AdminDot() {
                 </label>
                 {mode === 'setup' && (
                   <label className="block">
-                    <span className="text-xs font-medium tracking-widest text-brown-light">CONFIRM PASSCODE</span>
+                    <span className="text-xs font-medium tracking-widest text-sage-dark">CONFIRM PASSCODE</span>
                     <input
                       type="password"
                       value={confirm}
@@ -203,7 +203,7 @@ export default function AdminDot() {
                 )}
                 {error && <p role="alert" className="rounded-lg bg-rose-light p-3 text-sm">{error}</p>}
                 {!supabaseConfigured && (
-                  <p className="rounded-lg bg-cream p-3 text-xs leading-relaxed text-brown-light">
+                  <p className="rounded-lg bg-sage p-3 text-xs leading-relaxed text-sage-dark">
                     Supabase is not configured in this deployment yet. Set VITE_SUPABASE_URL and
                     VITE_SUPABASE_ANON_KEY, run migrations 001, 002, 003 and 004 plus storage.sql.
                     Full steps: SUPABASE_SETUP.md in the repo.
@@ -212,13 +212,13 @@ export default function AdminDot() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-full bg-brown py-3 text-sm font-medium tracking-[0.2em] text-ivory transition hover:bg-gold-dark focus:outline-none focus:ring-2 focus:ring-gold disabled:opacity-70"
+                  className="w-full rounded-full bg-emerald-dark py-3 text-sm font-medium tracking-[0.2em] text-mint transition hover:bg-gold-dark focus:outline-none focus:ring-2 focus:ring-gold disabled:opacity-70"
                 >
                   {loading ? 'CHECKING…' : mode === 'setup' ? 'SET PASSCODE & UNLOCK' : 'UNLOCK ADMIN PANEL'}
                 </button>
               </form>
             )}
-            <button onClick={() => setOpen(false)} className="mt-4 text-sm text-brown-light underline">
+            <button onClick={() => setOpen(false)} className="mt-4 text-sm text-sage-dark underline">
               Close
             </button>
           </div>

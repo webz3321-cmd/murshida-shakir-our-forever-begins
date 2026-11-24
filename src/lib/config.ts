@@ -78,7 +78,7 @@ export interface ThemeSettings {
 }
 
 export const DEFAULT_THEME: ThemeSettings = {
-  backgroundColor: '#FFF9F0',
+  backgroundColor: '#F2F8F1',
   goldAccent: '#D6B56D',
   headingFont: 'serif',
   animationsEnabled: true,

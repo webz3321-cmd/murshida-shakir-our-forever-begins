@@ -24,7 +24,7 @@ export default function Countdown() {
     return (
       <section className="px-5 py-16 text-center">
         <p className="font-script text-4xl text-gold-dark">Just Married</p>
-        <p className="mt-2 text-brown-light">Murshida &amp; Shakir began their forever on 27 December 2026.</p>
+        <p className="mt-2 text-sage-dark">Murshida &amp; Shakir began their forever on 27 December 2026.</p>
       </section>
     )
   }
@@ -38,11 +38,11 @@ export default function Countdown() {
   return (
     <section aria-label="Countdown to the wedding" className="px-5 py-16 text-center">
       <h2 className="font-serif text-3xl font-semibold sm:text-4xl">Counting Down to Forever</h2>
-      <p className="mt-2 text-sm text-brown-light">27 December 2026 · Asia/Kolkata</p>
+      <p className="mt-2 text-sm text-sage-dark">27 December 2026 · Asia/Kolkata</p>
       <div className="mx-auto mt-8 grid max-w-lg grid-cols-4 gap-3">
         {cells.map(([value, label]) => (
           <div key={label} className="rounded-xl border border-gold/50 bg-white/80 px-2 py-5 shadow-sm">
-            <p className="font-serif text-4xl font-semibold tabular-nums text-brown sm:text-5xl">
+            <p className="font-serif text-4xl font-semibold tabular-nums text-emerald-dark sm:text-5xl">
               {String(value).padStart(2, '0')}
             </p>
             <p className="mt-1 text-[11px] font-medium tracking-[0.2em] text-gold-dark">{label.toUpperCase()}</p>

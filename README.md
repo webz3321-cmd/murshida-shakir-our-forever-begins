@@ -12,11 +12,11 @@ Luxury interactive digital wedding invitation for **Murshida & Shakir**.
 A standalone Vite + React + TypeScript + Tailwind CSS app with Supabase as the backend:
 
 - Full-screen envelope opening — huge stacked **YOU ARE / INVITED** serif type, a blinking gold pointing finger above the **OPEN INVITATION** button, a 3D flap, sound only after the click
-- **Qubba ring** — after the envelope opens, an Islamic-inspired ornamental ring (concentric champagne-gold rings, rotating geometric stars, a dome arc with finial, a golden light travelling the border) blooms full-screen with the couple’s names inside, then rests behind the hero names and fades with scroll parallax
-- Premium scrolling — smooth scrolling, Intersection Observer section reveals, animated gold dividers, floating florals, reduced-motion support and an admin animations toggle
+- **Green Qubba-minar ring** — after the envelope opens, a deep emerald onion dome with a gold crescent finial, a gold band and an arched doorway, flanked by two slender minarets with their own little emerald domes, inside a rotating gold-and-green star ring, blooms full-screen with the couple’s names in emerald script beneath the dome, then rests behind the hero names and fades with scroll parallax
+- Premium scrolling — smooth scrolling, Intersection Observer section reveals, animated gold dividers, floating mint petals, reduced-motion support and an admin animations toggle
 - Hero, wedding details, live countdown (Asia/Kolkata, updates every second)
 - Venue section — name + Google Maps *search* link only
-- **OUR BEAUTIFUL MOMENTS** — a cinematic gold-framed video section (play overlay, native controls with fullscreen/volume/progress, poster thumbnails, selectable film list), fed only by real admin uploads, with an elegant empty state when no video is published
+- **OUR BEAUTIFUL MOMENTS** — a cinematic emerald-and-gold-framed video section (play overlay, native controls with fullscreen/volume/progress, poster thumbnails, selectable film list), fed only by real admin uploads, with an elegant empty state when no video is published
 - Wedding-day timeline (starts empty — no timings invented)
 - Islamic blessing (a general blessing, not presented as a Quran verse or Hadith)
 - RSVP form with validation, duplicate prevention by phone, and a hashed edit token
@@ -83,6 +83,6 @@ The venue address has **not** been verified, so no address, coordinates or map p
 
 ## Design
 
-- Champagne Gold `#D6B56D`, Warm Ivory `#FFF9F0`, Cream `#F6EBDD`, Deep Brown `#49372F`, Soft Rose `#D9A6A0`
+- Deep Emerald `#0F5132` / `#0A3D24`, Mint Ivory `#F2F8F1`, Sage `#E4EFE3`, Champagne Gold `#D6B56D` (accent only), Soft Rose `#D9A6A0`
 - Fonts: Cormorant Garamond (serif), Great Vibes (script), Jost (sans) via Google Fonts with `display=swap` and strong fallbacks, so the page paints even if fonts stall.
 - Mobile-first, reduced-motion support, keyboard-accessible video controls and forms.

@@ -13,7 +13,7 @@ export default function Timeline({ events = [] }: { events?: WeddingEvent[] }) {
           <div className="mt-8 rounded-2xl border border-dashed border-gold/60 bg-white/70 p-8">
             <Clock className="mx-auto text-gold" size={28} aria-hidden />
             <p className="mt-3 font-serif text-xl">Our timings are being finalised</p>
-            <p className="mt-2 text-sm leading-relaxed text-brown-light">
+            <p className="mt-2 text-sm leading-relaxed text-sage-dark">
               The order of the day will appear here once the couple confirms it.
               Please check back closer to 27 December 2026.
             </p>
@@ -24,8 +24,8 @@ export default function Timeline({ events = [] }: { events?: WeddingEvent[] }) {
               <li key={e.id} className="rounded-2xl border border-gold/40 bg-white/90 p-5 shadow-sm">
                 <p className="text-xs font-medium tracking-[0.2em] text-gold-dark">{e.event_time}</p>
                 <h3 className="mt-1 font-serif text-2xl">{e.title}</h3>
-                {e.description && <p className="mt-1 text-sm text-brown-light">{e.description}</p>}
-                {e.location && <p className="mt-1 text-xs text-brown-light">{e.location}</p>}
+                {e.description && <p className="mt-1 text-sm text-sage-dark">{e.description}</p>}
+                {e.location && <p className="mt-1 text-xs text-sage-dark">{e.location}</p>}
               </li>
             ))}
           </ol>

@@ -65,28 +65,28 @@ export default function FloatingMusicPlayer({
             <Music size={16} className="text-gold" aria-hidden />
             {trackTitle ?? 'No music uploaded yet'}
           </p>
-          <p className="mt-1 text-xs text-brown-light">
+          <p className="mt-1 text-xs text-sage-dark">
             {trackUrl ? (playing ? 'Now playing' : 'Paused') : 'Upload background music in Admin → Audio.'}
           </p>
           <div className="mt-3 flex items-center gap-2">
-            <button onClick={toggle} disabled={!trackUrl} aria-label={playing ? 'Pause music' : 'Play music'} className="rounded-full bg-brown p-2.5 text-ivory disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gold">
+            <button onClick={toggle} disabled={!trackUrl} aria-label={playing ? 'Pause music' : 'Play music'} className="rounded-full bg-emerald-dark p-2.5 text-mint disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gold">
               {playing ? <Pause size={16} /> : <Play size={16} />}
             </button>
             <button onClick={() => setMuted((m) => !m)} aria-label={muted ? 'Unmute' : 'Mute'} className="rounded-full border border-gold/50 p-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
               {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
-            <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volume" className="w-full accent-[#D6B56D]" />
+            <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volume" className="w-full accent-[#0F5132]" />
           </div>
         </div>
       )}
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label="Open music player"
-        className="ml-auto flex h-12 w-12 items-center justify-center rounded-full bg-brown text-ivory shadow-lg focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
+        className="ml-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-dark text-mint shadow-lg focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
       >
         {playing ? (
           <span className="flex h-4 items-end gap-0.5" aria-hidden>
-            {[0, 1, 2].map((i) => <span key={i} className="eq-bar w-1 rounded bg-ivory" style={{ height: '100%', animationDelay: `${i * 0.15}s` }} />)}
+            {[0, 1, 2].map((i) => <span key={i} className="eq-bar w-1 rounded bg-mint" style={{ height: '100%', animationDelay: `${i * 0.15}s` }} />)}
           </span>
         ) : (
           <Music size={20} />
